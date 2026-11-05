@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Party Explorer — Static POC</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./party.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Party Explorer home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>Party<span class="brand-light"> Explorer</span><small>REUSABLE PARTY RECORDS</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="storage-indicator"><i></i> Saved in this browser</span>
+        <button class="button button-quiet" id="reset-button" type="button">Reset sample data</button>
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <div class="eyebrow">PARTY CATALOGUE <span class="eyebrow-line"></span> DEMO WORKSPACE</div>
+          <h1>Identity, clearly connected.</h1>
+          <p>Explore individuals, companies, and the groups they form.</p>
+        </div>
+        <button class="button button-primary" id="create-button" type="button"><span aria-hidden="true">＋</span> New Party</button>
+      </section>
+      <aside class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <span><strong>Fictional demonstration data only.</strong> No authentication, authorization, audit, retention, identity matching, or compliance controls are implemented. Do not enter real personal or company data.</span>
+      </aside>
+      <section class="workspace" aria-label="Party workspace">
+        <div class="catalogue panel">
+          <div class="panel-heading">
+            <div><div class="section-kicker">YOUR RECORDS</div><h2>Party catalogue</h2></div>
+            <span class="count-pill" id="record-count">0 Parties</span>
+          </div>
+          <label class="search-wrap" for="search-input"><span aria-hidden="true">⌕</span>
+            <input id="search-input" type="search" placeholder="Search name, ID, matter…" autocomplete="off">
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="filter-row">
+            <label class="sr-only" for="type-filter">Filter by Party type</label>
+            <select id="type-filter"><option value="">All Party types</option><option value="individual">Individual</option><option value="company">Company</option><option value="group">Group</option></select>
+            <label class="sr-only" for="status-filter">Filter by record status</label>
+            <select id="status-filter"><option value="">Any status</option><option>Active</option><option>Inactive</option><option>Archived</option></select>
+          </div>
+          <div class="list-caption"><span>PARTY</span><span>STATUS</span></div>
+          <ul class="party-list" id="party-list" aria-label="Parties"></ul>
+          <div class="list-foot"><span class="live-dot"></span> <span id="visible-count">0 records</span><span class="foot-divider">·</span> Local demo</div>
+        </div>
+        <section class="detail panel" id="detail-panel" aria-live="polite">
+          <div class="detail-empty"><span class="empty-glyph">◈</span><h2>Select a Party</h2><p>Choose a record from the catalogue to see identity details and relationships.</p></div>
+        </section>
+      </section>
+      <footer class="page-footer"><span>PARTY EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>No server · No external services · Changes stay in this browser</span></footer>
+    </main>
+  </div>
+  <dialog id="party-dialog" aria-labelledby="dialog-title">
+    <form id="party-form" novalidate>
+      <div class="dialog-heading"><div><div class="section-kicker">PARTY RECORD</div><h2 id="dialog-title">New Party</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Close">×</button></div>
+      <div id="form-feedback" class="form-feedback" role="alert" hidden></div>
+      <input id="form-id" type="hidden">
+      <div class="form-grid">
+        <label class="field field-wide">Display name <span class="required">*</span><input id="form-name" required maxlength="120" placeholder="e.g. Avery Morgan"></label>
+        <label class="field">Party type <span class="required">*</span><select id="form-type" required><option value="">Choose type</option><option value="individual">Individual</option><option value="company">Company</option><option value="group">Group</option></select></label>
+        <label class="field">Record status <span class="required">*</span><select id="form-status" required><option>Active</option><option>Inactive</option><option>Archived</option></select></label>
+      </div>
+      <section class="type-fields" id="individual-fields">
+        <div class="section-kicker">INDIVIDUAL DETAILS</div>
+        <div class="form-grid">
+          <label class="field">Given names<input id="form-given" maxlength="120" placeholder="Optional"></label>
+          <label class="field">Family name<input id="form-family" maxlength="120" placeholder="Optional"></label>
+          <label class="field">Date of birth<input id="form-dob" type="date"></label>
+          <label class="field">Nationality<input id="form-nationality" maxlength="80" placeholder="Optional"></label>
+        </div>
+        <p class="inline-guidance">Only add optional personal details when a legitimate demo purpose requires them.</p>
+      </section>
+      <section class="type-fields" id="company-fields" hidden>
+        <div class="section-kicker">COMPANY DETAILS</div>
+        <div class="form-grid">
+          <label class="field field-wide">Legal name<input id="form-legal" maxlength="160" placeholder="Optional when not applicable"></label>
+          <label class="field">Trading name<input id="form-trading" maxlength="120"></label>
+          <label class="field">Legal form<input id="form-legal-form" maxlength="100" placeholder="e.g. Private limited company"></label>
+          <label class="field">Registration reference<input id="form-registration" maxlength="100" placeholder="Fictional only"></label>
+          <label class="field">Jurisdiction<input id="form-jurisdiction" maxlength="100"></label>
+        </div>
+      </section>
+      <section class="type-fields membership-editor" id="group-fields" hidden>
+        <div class="relationship-title"><div><div class="section-kicker">GROUP MEMBERSHIP</div><h3>Members and group roles</h3></div><button class="button button-outline" id="add-member" type="button">＋ Add member</button></div>
+        <p>Groups contain individual or company Parties only. Membership role and dates describe this group relationship.</p>
+        <div id="membership-rows"></div>
+        <p class="inline-guidance">At least one active member is required before this group can participate in a matter.</p>
+      </section>
+      <section class="participation-editor">
+        <div class="relationship-title"><div><div class="section-kicker">MATTER REFERENCES</div><h3>Participation roles</h3></div><button class="button button-outline" id="add-matter" type="button">＋ Add matter</button></div>
+        <p>Roles belong to a matter participation, not to the Party identity.</p>
+        <div id="matter-rows"></div>
+      </section>
+      <div class="dialog-actions"><button class="button button-quiet" id="cancel-dialog" type="button">Cancel</button><button class="button button-primary" type="submit">Save Party</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
