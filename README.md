@@ -10,6 +10,14 @@ Open [`src/index.html`](src/index.html) directly in a modern browser. All app sc
 are classic browser JavaScript so the page works from a local file without a server.
 No install or build is required.
 
+## Publish with GitHub Pages
+
+The **Publish GitHub Pages** workflow deploys the static app from `src/` when changes
+are pushed to `master`, or when manually started from the Actions tab. In the
+repository settings, set **Pages → Build and deployment → Source** to **GitHub Actions**.
+The deployment URL is available in the workflow run summary and the `github-pages`
+environment.
+
 Edits are stored in this browser's `localStorage`. Use **Reset sample data** to remove
 local changes and restore the included fictional records. Storage is not shared,
 secure, backed up, or suitable for production data.
