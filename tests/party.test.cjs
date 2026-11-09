@@ -82,10 +82,15 @@ test("search covers identifiers, names, member names, matter references, type an
 test("Companies House API search sends the name and Basic-authenticated key", async () => {
   let request;
   const expectedItems = [{ title: "ACME & SONS LTD", company_number: "01234567" }];
-  const items = await M.searchCompaniesHouse("  Acme & Sons Ltd  ", " test-key ", async (url, options) => {
-    request = { url: new URL(url), options };
-    return { ok: true, json: async () => ({ items: expectedItems }) };
-  });
+  let responseBody;
+  const items = await M.searchCompaniesHouse(
+    "  Acme & Sons Ltd  ", " test-key ",
+    async (url, options) => {
+      request = { url: new URL(url), options };
+      return { ok: true, json: async () => ({ items: expectedItems }) };
+    },
+    data => { responseBody = data; }
+  );
   assert.equal(request.url.origin, "https://api.company-information.service.gov.uk");
   assert.equal(request.url.protocol, "https:");
   assert.equal(request.url.pathname, "/search/companies");
@@ -95,6 +100,7 @@ test("Companies House API search sends the name and Basic-authenticated key", as
   assert.equal(request.options.headers.Authorization, `Basic ${Buffer.from("test-key:").toString("base64")}`);
   assert.equal(request.options.headers.Accept, "application/json");
   assert.deepEqual(items, expectedItems);
+  assert.deepEqual(responseBody, { items: expectedItems });
 });
 
 test("Companies House request URL rejects an empty search term", () => {

@@ -223,6 +223,7 @@
     $("#form-dob").value = party?.dateOfBirth || "";
     $("#form-nationality").value = party?.nationality || "";
     $("#form-legal").value = party?.legalName || "";
+    $("#companies-house-query").value = party?.legalName || party?.displayName || "";
     $("#form-trading").value = party?.tradingName || "";
     $("#form-legal-form").value = party?.legalForm || "";
     $("#form-registration").value = party?.registrationNumber || "";
@@ -240,18 +241,24 @@
     $("#group-fields").hidden = type !== "group";
     updateCompaniesHouseSearch(true);
   }
+  function syncCompanyNameFields() {
+    const displayName = $("#form-name").value;
+    $("#form-legal").value = displayName;
+    $("#companies-house-query").value = displayName;
+  }
   function clearCompaniesHouseSearch() {
     companySearchRequestId += 1;
     companySearchInProgress = false;
     companiesHouseResults = [];
     $("#companies-house-request").hidden = true;
     $("#companies-house-request-details").textContent = "";
+    $("#companies-house-response-details").textContent = "";
     $("#companies-house-search-status").textContent = "";
     $("#companies-house-results").replaceChildren();
     $("#companies-house-results").hidden = true;
   }
   function updateCompaniesHouseSearch(clearIfChanged = false) {
-    const companyName = $("#form-legal").value.trim() || $("#form-name").value.trim();
+    const companyName = $("#companies-house-query").value.trim();
     const apiKey = $("#companies-house-api-key").value.trim();
     if (clearIfChanged && (companyName !== lastCompanySearchName || apiKey !== lastCompanyApiKey)) {
       clearCompaniesHouseSearch();
@@ -282,7 +289,7 @@
     results.hidden = companies.length === 0;
   }
   async function searchCompaniesHouse() {
-    const companyName = $("#form-legal").value.trim() || $("#form-name").value.trim();
+    const companyName = $("#companies-house-query").value.trim();
     const apiKey = $("#companies-house-api-key").value.trim();
     const requestId = ++companySearchRequestId;
     companySearchInProgress = true;
@@ -298,9 +305,14 @@
       "",
       "(no request body)"
     ].join("\n");
+    $("#companies-house-response-details").textContent = "Waiting for response…";
     $("#companies-house-request").hidden = false;
     try {
-      const companies = await M.searchCompaniesHouse(companyName, apiKey);
+      const companies = await M.searchCompaniesHouse(companyName, apiKey, undefined, response => {
+        if (requestId === companySearchRequestId) {
+          $("#companies-house-response-details").textContent = JSON.stringify(response, null, 2);
+        }
+      });
       if (requestId !== companySearchRequestId) return;
       companiesHouseResults = companies;
       renderCompaniesHouseResults(companies);
@@ -309,6 +321,9 @@
         : "No matching companies found.";
     } catch (error) {
       if (requestId !== companySearchRequestId) return;
+      if ($("#companies-house-response-details").textContent === "Waiting for response…") {
+        $("#companies-house-response-details").textContent = "No response JSON available.";
+      }
       $("#companies-house-search-status").textContent = error instanceof Error
         ? error.message
         : "Company search failed. Try again.";
@@ -322,10 +337,12 @@
   function selectCompaniesHouseResult(index) {
     const company = companiesHouseResults[index];
     if (!company) return;
+    $("#form-name").value = company.title || "";
     $("#form-legal").value = company.title || "";
     $("#form-registration").value = company.company_number || "";
     $("#form-legal-form").value = company.company_type || "";
     $("#form-jurisdiction").value = "United Kingdom";
+    $("#companies-house-query").value = company.title || "";
     updateCompaniesHouseSearch(true);
   }
   function collectParty() {
@@ -422,9 +439,20 @@
   $("#search-input").addEventListener("input", renderList);
   $("#type-filter").addEventListener("change", renderList);
   $("#status-filter").addEventListener("change", renderList);
-  $("#form-type").addEventListener("change", updateTypeFields);
-  $("#form-name").addEventListener("input", () => updateCompaniesHouseSearch(true));
-  $("#form-legal").addEventListener("input", () => updateCompaniesHouseSearch(true));
+  $("#form-type").addEventListener("change", () => {
+    if ($("#form-type").value === "company") syncCompanyNameFields();
+    updateTypeFields();
+  });
+  $("#form-name").addEventListener("input", () => {
+    if ($("#form-type").value === "company") {
+      syncCompanyNameFields();
+      updateCompaniesHouseSearch(true);
+    }
+  });
+  $("#companies-house-query").addEventListener("input", () => updateCompaniesHouseSearch(true));
+  $("#companies-house-query").addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); searchCompaniesHouse(); }
+  });
   $("#companies-house-api-key").addEventListener("input", () => updateCompaniesHouseSearch(true));
   $("#companies-house-search").addEventListener("click", searchCompaniesHouse);
   $("#companies-house-results").addEventListener("click", event => {

@@ -86,25 +86,32 @@
       </section>
       <section class="type-fields" id="company-fields" hidden>
         <div class="section-kicker">COMPANY DETAILS</div>
+        <section class="company-lookup" aria-labelledby="companies-house-title">
+          <div class="company-lookup-heading"><div><div class="section-kicker">COMPANIES HOUSE</div><h3 id="companies-house-title">Find a company</h3></div></div>
+          <p>Search the register and choose a result to fill the company details.</p>
+          <div class="company-lookup-search">
+            <label class="field">Company name<input id="companies-house-query" type="search" maxlength="160" placeholder="Enter a company name" autocomplete="off"></label>
+            <button class="button button-outline" id="companies-house-search" type="button" disabled>Search</button>
+          </div>
+          <div class="company-api-row">
+            <label class="field">Companies House API key<input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key"></label>
+          </div>
+          <p class="inline-guidance company-api-warning">Sent directly to Companies House over HTTPS. This static app cannot keep your key secret; it is not saved and clears when the form closes. Avoid shared or public computers.</p>
+          <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
+            <h4>Request <span>Authorization value hidden</span></h4>
+            <pre><code id="companies-house-request-details"></code></pre>
+            <h4>Response JSON</h4>
+            <pre><code id="companies-house-response-details">Waiting for response…</code></pre>
+          </section>
+          <p class="company-search-status" id="companies-house-search-status" role="status" aria-live="polite"></p>
+          <ul class="companies-house-results" id="companies-house-results" aria-label="Companies House search results" hidden></ul>
+        </section>
         <div class="form-grid">
           <label class="field field-wide">Legal name<input id="form-legal" maxlength="160" placeholder="Optional when not applicable"></label>
           <label class="field">Trading name<input id="form-trading" maxlength="120"></label>
           <label class="field">Legal form<input id="form-legal-form" maxlength="100" placeholder="e.g. Private limited company"></label>
           <label class="field">Registration reference<input id="form-registration" maxlength="100" placeholder="e.g. 01234567"></label>
           <label class="field">Jurisdiction<input id="form-jurisdiction" maxlength="100"></label>
-        </div>
-        <div class="company-search">
-          <label class="field">Companies House API key
-            <input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key">
-          </label>
-          <p class="inline-guidance company-api-warning">Sent directly to Companies House over HTTPS. This static app cannot keep your key secret; it is not saved and clears when the form closes. Avoid shared or public computers.</p>
-          <button class="button button-outline" id="companies-house-search" type="button" disabled>Search Companies House</button>
-          <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
-            <h4>Request sent <span>Authorization value hidden</span></h4>
-            <pre><code id="companies-house-request-details"></code></pre>
-          </section>
-          <p class="inline-guidance company-search-status" id="companies-house-search-status" role="status" aria-live="polite"></p>
-          <ul class="companies-house-results" id="companies-house-results" aria-label="Companies House search results" hidden></ul>
         </div>
       </section>
       <section class="type-fields membership-editor" id="group-fields" hidden>

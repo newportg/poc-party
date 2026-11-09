@@ -129,7 +129,7 @@
     url.searchParams.set("items_per_page", "10");
     return url.href;
   }
-  async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch) {
+  async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
     if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
     if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
@@ -143,6 +143,7 @@
       throw new Error(`Companies House request failed (HTTP ${response.status}).`);
     }
     const data = await response.json();
+    onResponse(data);
     if (!data || !Array.isArray(data.items)) throw new Error("Companies House returned an unexpected response.");
     return data.items;
   }

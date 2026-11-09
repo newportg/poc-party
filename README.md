@@ -29,10 +29,12 @@ secure, backed up, or suitable for production data.
 - Adjust detail pane zoom from 80% to 140% without changing the catalogue or overall
   page zoom.
 - Individual, company, and group details with create/edit interactions and validation.
-- For Company records, search the Companies House REST API for the entered legal name
-  (or display name if legal name is blank), then select a result to populate company
-  details. Enter an API key in the form to enable search. The request method, URL, and
-  headers are shown after search; the authorization value is masked.
+- Choosing Company as the Party type copies the display name to the legal name and
+  Companies House search fields; typing a display name for a Company keeps them in sync.
+- For Company records, search the Companies House REST API using the company lookup
+  panel, then select a result to populate the display name and company details. Enter
+  an API key in the panel to enable search. The request method, URL, and headers are
+  shown after search alongside the JSON response; the authorization value is masked.
 - Stable Party IDs; type is fixed after a record is created.
 - Explicit group membership for individual/company Parties, optional roles and dates,
   active and ended history, and validation against duplicates, invalid targets, and
