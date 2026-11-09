@@ -35,6 +35,8 @@ secure, backed up, or suitable for production data.
   panel, then select a result to populate the display name and company details. Enter
   an API key in the panel to enable search. The request method, URL, and headers are
   shown after search alongside the JSON response; the authorization value is masked.
+- If search reports a network or access block, check the browser's connection,
+  extensions, and firewall. An invalid API key is reported separately as HTTP 401.
 - Stable Party IDs; type is fixed after a record is created.
 - Explicit group membership for individual/company Parties, optional roles and dates,
   active and ended history, and validation against duplicates, invalid targets, and

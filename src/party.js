@@ -134,9 +134,17 @@
     if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
     if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
     const authorization = btoa(`${apiKey.trim()}:`);
-    const response = await fetchImpl(companiesHouseSearchUrl(name), {
-      headers: { Accept: "application/json", Authorization: `Basic ${authorization}` }
-    });
+    let response;
+    try {
+      response = await fetchImpl(companiesHouseSearchUrl(name), {
+        headers: { Accept: "application/json", Authorization: `Basic ${authorization}` }
+      });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error("Could not reach Companies House. The browser reported a network or access block; check your connection, browser extensions, and firewall. This is not an API-key rejection.");
+      }
+      throw error;
+    }
     if (!response.ok) {
       if (response.status === 401) throw new Error("Companies House rejected the API key. Check that it is correct.");
       if (response.status === 429) throw new Error("Companies House rate limit reached. Wait a moment and try again.");

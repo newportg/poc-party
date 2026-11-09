@@ -116,6 +116,13 @@ test("Companies House API search reports missing input and rejected credentials"
   );
 });
 
+test("Companies House API search explains browser network and access failures", async () => {
+  await assert.rejects(
+    M.searchCompaniesHouse("Acme Ltd", "api-key", async () => { throw new TypeError("Failed to fetch"); }),
+    /Could not reach Companies House.*network or access block.*not an API-key rejection/
+  );
+});
+
 test("active membership helper excludes ended history", () => {
   const sampleGroup = M.getSampleParties().find(party => party.type === "group");
   assert.equal(M.getActiveMemberships(sampleGroup).length, 2);
