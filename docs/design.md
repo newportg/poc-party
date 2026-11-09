@@ -24,7 +24,17 @@ knowledge-vault Party PRD and individual/company domain notes:
 `src/app.js` (rendering, form interactions, and storage). The app renders into the DOM
 and persists the complete fictional collection under `poc-party.records.v1` in
 `localStorage`. The reset action replaces it with the original sample set. It makes no
-network requests and has no backend or build tooling.
+automatic network requests until a Company search is explicitly requested. The form
+accepts a Companies House API key and sends a Basic-authenticated HTTPS request to
+`/search/companies`; the query uses the legal name when provided, otherwise the Party
+display name. Selecting a result populates the legal name, registration number, legal
+form, and jurisdiction. The key stays in the open form only, is not persisted, and is
+cleared when the form closes. Because requests originate in the browser, the key is
+visible to the user and cannot be kept secret by this static app; use only on a trusted
+device. A server-side proxy is required to protect a shared application key. Selecting
+a register result does not constitute legal verification. After each search, the form
+shows the GET URL and request headers; the Authorization value is masked so the API key
+is not displayed in the request preview.
 
 ## Validation boundaries
 

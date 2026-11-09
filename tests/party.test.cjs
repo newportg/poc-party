@@ -79,6 +79,37 @@ test("search covers identifiers, names, member names, matter references, type an
   assert.equal(M.searchParties(parties, "", "", "Inactive").length, 1);
 });
 
+test("Companies House API search sends the name and Basic-authenticated key", async () => {
+  let request;
+  const expectedItems = [{ title: "ACME & SONS LTD", company_number: "01234567" }];
+  const items = await M.searchCompaniesHouse("  Acme & Sons Ltd  ", " test-key ", async (url, options) => {
+    request = { url: new URL(url), options };
+    return { ok: true, json: async () => ({ items: expectedItems }) };
+  });
+  assert.equal(request.url.origin, "https://api.company-information.service.gov.uk");
+  assert.equal(request.url.protocol, "https:");
+  assert.equal(request.url.pathname, "/search/companies");
+  assert.equal(M.companiesHouseSearchUrl("  Acme & Sons Ltd  "), request.url.href);
+  assert.equal(request.url.searchParams.get("q"), "Acme & Sons Ltd");
+  assert.equal(request.url.searchParams.get("items_per_page"), "10");
+  assert.equal(request.options.headers.Authorization, `Basic ${Buffer.from("test-key:").toString("base64")}`);
+  assert.equal(request.options.headers.Accept, "application/json");
+  assert.deepEqual(items, expectedItems);
+});
+
+test("Companies House request URL rejects an empty search term", () => {
+  assert.throws(() => M.companiesHouseSearchUrl("  "), /company name/);
+});
+
+test("Companies House API search reports missing input and rejected credentials", async () => {
+  await assert.rejects(M.searchCompaniesHouse("", "api-key", async () => {}), /company name/);
+  await assert.rejects(M.searchCompaniesHouse("Acme Ltd", "", async () => {}), /API key/);
+  await assert.rejects(
+    M.searchCompaniesHouse("Acme Ltd", "bad-key", async () => ({ ok: false, status: 401 })),
+    /rejected the API key/
+  );
+});
+
 test("active membership helper excludes ended history", () => {
   const sampleGroup = M.getSampleParties().find(party => party.type === "group");
   assert.equal(M.getActiveMemberships(sampleGroup).length, 2);

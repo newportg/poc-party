@@ -35,7 +35,7 @@
       </section>
       <aside class="notice" role="note">
         <span class="notice-icon" aria-hidden="true">i</span>
-        <span><strong>Fictional demonstration data only.</strong> No authentication, authorization, audit, retention, identity matching, or compliance controls are implemented. Do not enter real personal or company data.</span>
+        <span><strong>Demonstration app.</strong> Company search uses public Companies House data; selecting a result is not legal verification. Records are stored only in this browser. No authentication, authorization, audit, retention, identity matching, or compliance controls are implemented. Do not enter personal or confidential information.</span>
       </aside>
       <section class="workspace" aria-label="Party workspace">
         <div class="catalogue panel">
@@ -61,7 +61,7 @@
           <div class="detail-empty"><span class="empty-glyph">◈</span><h2>Select a Party</h2><p>Choose a record from the catalogue to see identity details and relationships.</p></div>
         </section>
       </section>
-      <footer class="page-footer"><span>PARTY EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>No server · No external services · Changes stay in this browser</span></footer>
+      <footer class="page-footer"><span>PARTY EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>Direct Companies House API · Changes stay in this browser</span></footer>
     </main>
   </div>
   <dialog id="party-dialog" aria-labelledby="dialog-title">
@@ -90,8 +90,21 @@
           <label class="field field-wide">Legal name<input id="form-legal" maxlength="160" placeholder="Optional when not applicable"></label>
           <label class="field">Trading name<input id="form-trading" maxlength="120"></label>
           <label class="field">Legal form<input id="form-legal-form" maxlength="100" placeholder="e.g. Private limited company"></label>
-          <label class="field">Registration reference<input id="form-registration" maxlength="100" placeholder="Fictional only"></label>
+          <label class="field">Registration reference<input id="form-registration" maxlength="100" placeholder="e.g. 01234567"></label>
           <label class="field">Jurisdiction<input id="form-jurisdiction" maxlength="100"></label>
+        </div>
+        <div class="company-search">
+          <label class="field">Companies House API key
+            <input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key">
+          </label>
+          <p class="inline-guidance company-api-warning">Sent directly to Companies House over HTTPS. This static app cannot keep your key secret; it is not saved and clears when the form closes. Avoid shared or public computers.</p>
+          <button class="button button-outline" id="companies-house-search" type="button" disabled>Search Companies House</button>
+          <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
+            <h4>Request sent <span>Authorization value hidden</span></h4>
+            <pre><code id="companies-house-request-details"></code></pre>
+          </section>
+          <p class="inline-guidance company-search-status" id="companies-house-search-status" role="status" aria-live="polite"></p>
+          <ul class="companies-house-results" id="companies-house-results" aria-label="Companies House search results" hidden></ul>
         </div>
       </section>
       <section class="type-fields membership-editor" id="group-fields" hidden>

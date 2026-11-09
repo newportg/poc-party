@@ -2,7 +2,8 @@
 
 A browser-native demonstration of reusable Party records: individuals, companies,
 groups, group membership, and matter participation. This is a standalone prototype;
-it has no server, build step, dependencies, external requests, or authoritative data.
+it has no server, build step, dependencies, or authoritative data. Company search makes
+an HTTPS request to the Companies House API only when explicitly started by the user.
 
 ## Run
 
@@ -28,6 +29,10 @@ secure, backed up, or suitable for production data.
 - Adjust detail pane zoom from 80% to 140% without changing the catalogue or overall
   page zoom.
 - Individual, company, and group details with create/edit interactions and validation.
+- For Company records, search the Companies House REST API for the entered legal name
+  (or display name if legal name is blank), then select a result to populate company
+  details. Enter an API key in the form to enable search. The request method, URL, and
+  headers are shown after search; the authorization value is masked.
 - Stable Party IDs; type is fixed after a record is created.
 - Explicit group membership for individual/company Parties, optional roles and dates,
   active and ended history, and validation against duplicates, invalid targets, and
@@ -36,9 +41,13 @@ secure, backed up, or suitable for production data.
 - Resettable local sample data, persistent light/dark theme preference, and clear
   demo-only security and privacy caveats.
 
-All records are fictional. Authorization, audit, retention, identity matching,
-screening, verification, and compliance controls are not implemented. Do not enter
-real personal or company information.
+Sample records are fictional; company search uses public Companies House data. The API
+key is sent directly to Companies House over HTTPS and is not saved by this app, but a
+browser-based app cannot keep it secret. Use only on a trusted device; do not use
+shared or public computers. Selecting a search result is not legal verification.
+Authorization, audit, retention, identity matching, screening, verification, and
+compliance controls are not implemented. Do not enter personal or confidential
+information.
 
 ## Project links
 
