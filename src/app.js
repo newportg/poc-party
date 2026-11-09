@@ -6,9 +6,37 @@
   const detail = $("#detail-panel");
   const dialog = $("#party-dialog");
   const form = $("#party-form");
+  const THEME_STORAGE_KEY = "poc-party.theme.v1";
   let parties = loadParties();
   let selectedId = parties[0]?.id || "";
+  let detailZoom = 100;
   let toastTimer;
+
+  function loadTheme() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
+    } catch (error) {
+      console.warn("Could not read the theme preference.", error);
+      return "dark";
+    }
+  }
+  function setTheme(theme, save = false) {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = theme;
+    $("#theme-toggle").setAttribute("aria-label", `Switch to ${nextTheme} theme`);
+    $("#theme-toggle").title = `Switch to ${nextTheme} theme`;
+    $("#theme-toggle .theme-icon").textContent = theme === "dark" ? "☼" : "☾";
+    $("#theme-toggle .theme-label").textContent = theme === "dark" ? "Light" : "Dark";
+    document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#0a0a0f" : "#f5f6fa";
+    if (!save) return;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+      console.warn("Could not save the theme preference.", error);
+      showToast("Theme changed, but the preference could not be saved.", "error");
+    }
+  }
+  setTheme(loadTheme());
 
   function loadParties() {
     try {
@@ -88,7 +116,18 @@
       <article class="participation-card"><span class="matter-ref">${escapeHtml(ref.matterId)}</span><div><strong>${escapeHtml(ref.matterName || "Matter name not recorded")}</strong><small>Participation role · ${escapeHtml(ref.role)}</small></div></article>`).join("") : `<p class="empty-note">No matter references recorded. Roles are contextual and are not stored on Party identity.</p>`;
     const memberCount = memberships.length;
     detail.innerHTML = `
-      <div class="detail-topline"><span class="record-label">PARTY RECORD <span>/</span> ${escapeHtml(party.id)}</span><button class="button button-outline" id="edit-button" type="button">✎ &nbsp;Edit record</button></div>
+      <div class="detail-topline">
+        <span class="record-label">PARTY RECORD <span>/</span> ${escapeHtml(party.id)}</span>
+        <div class="detail-actions">
+          <div class="detail-zoom" role="group" aria-label="Detail pane zoom">
+            <button class="button button-quiet zoom-button" type="button" data-zoom="out" aria-label="Zoom out detail pane">−</button>
+            <button class="button button-quiet zoom-value" type="button" data-zoom="reset" aria-label="Reset detail pane zoom to 100 percent">${detailZoom}%</button>
+            <button class="button button-quiet zoom-button" type="button" data-zoom="in" aria-label="Zoom in detail pane">+</button>
+          </div>
+          <button class="button button-outline" id="edit-button" type="button">✎ &nbsp;Edit record</button>
+        </div>
+      </div>
+      <div class="detail-zoom-content">
       <div class="detail-title"><span class="detail-avatar ${escapeHtml(party.type)}">${escapeHtml(initials(party.displayName))}</span>
         <div class="title-copy"><div class="eyebrow">${escapeHtml(labelType(party.type).toUpperCase())} <span class="footer-dot">/</span> STABLE IDENTITY</div><h2>${escapeHtml(party.displayName)}</h2><p>${escapeHtml(party.id)} <span class="row-divider">·</span> Type is fixed after creation</p></div>
         <span class="status-badge ${escapeHtml(party.status.toLowerCase())}"><i></i>${escapeHtml(party.status)}</span>
@@ -100,7 +139,30 @@
         <section class="info-card wide"><div class="card-title"><span class="card-icon">↗</span><div><h3>Matter participation</h3><p>Context-specific roles never change Party identity</p></div></div>${participationRows}</section>
       </div></div>
       ${party.type === "group" ? `<div class="tab-content" data-panel="members"><div class="relationship-title"><div><div class="section-kicker">GROUP MEMBERSHIP</div><h3>Member Parties</h3></div><span class="count-pill">${activeCount(party)} active</span></div><div class="connection-list" style="margin-top:14px">${memberRows}</div></div>` : ""}
-      <div class="tab-content" data-panel="references"><div class="relationship-title"><div><div class="section-kicker">CONTEXTUAL RELATIONSHIPS</div><h3>Matter references</h3></div><span class="count-pill">${participations.length} total</span></div><div style="margin-top:14px">${participationRows}</div></div>`;
+      <div class="tab-content" data-panel="references"><div class="relationship-title"><div><div class="section-kicker">CONTEXTUAL RELATIONSHIPS</div><h3>Matter references</h3></div><span class="count-pill">${participations.length} total</span></div><div style="margin-top:14px">${participationRows}</div></div>
+      </div>`;
+    applyDetailZoom();
+    updateDetailZoomControls();
+  }
+  function applyDetailZoom() {
+    const zoomContent = detail.querySelector(".detail-zoom-content");
+    if (!zoomContent) return;
+    const scale = detailZoom / 100;
+    const detailStyle = getComputedStyle(detail);
+    const availableWidth = detail.clientWidth - parseFloat(detailStyle.paddingLeft) - parseFloat(detailStyle.paddingRight);
+    zoomContent.style.width = `${availableWidth / scale}px`;
+    zoomContent.style.transform = `scale(${scale})`;
+    zoomContent.style.marginBottom = `${zoomContent.offsetHeight * (scale - 1)}px`;
+  }
+  function updateDetailZoomControls() {
+    const zoomOut = detail.querySelector('[data-zoom="out"]');
+    const zoomIn = detail.querySelector('[data-zoom="in"]');
+    const zoomReset = detail.querySelector('[data-zoom="reset"]');
+    if (!zoomOut || !zoomIn || !zoomReset) return;
+    zoomOut.disabled = detailZoom <= 80;
+    zoomIn.disabled = detailZoom >= 140;
+    zoomReset.textContent = `${detailZoom}%`;
+    zoomReset.setAttribute("aria-label", `Detail pane zoom is ${detailZoom} percent; reset to 100 percent`);
   }
 
   function addMembershipRow(membership = {}) {
@@ -226,6 +288,10 @@
   }
 
   $("#create-button").addEventListener("click", () => openForm());
+  window.addEventListener("resize", applyDetailZoom);
+  $("#theme-toggle").addEventListener("click", () => {
+    setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
+  });
   $("#edit-button"); // Detail action is rebound after each detail render below.
   $("#party-list").addEventListener("click", event => {
     const row = event.target.closest("[data-id]");
@@ -237,6 +303,14 @@
     }
   });
   detail.addEventListener("click", event => {
+    const zoomButton = event.target.closest("[data-zoom]");
+    if (zoomButton) {
+      if (zoomButton.dataset.zoom === "reset") detailZoom = 100;
+      else detailZoom = Math.max(80, Math.min(140, detailZoom + (zoomButton.dataset.zoom === "in" ? 10 : -10)));
+      applyDetailZoom();
+      updateDetailZoomControls();
+      return;
+    }
     const edit = event.target.closest("#edit-button");
     if (edit) { openForm(parties.find(party => party.id === selectedId)); return; }
     const tab = event.target.closest("[data-tab]");

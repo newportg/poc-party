@@ -17,13 +17,16 @@ secure, backed up, or suitable for production data.
 ## What is included
 
 - Search by Party ID, name, membership, and matter reference; filter by type and status.
+- Adjust detail pane zoom from 80% to 140% without changing the catalogue or overall
+  page zoom.
 - Individual, company, and group details with create/edit interactions and validation.
 - Stable Party IDs; type is fixed after a record is created.
 - Explicit group membership for individual/company Parties, optional roles and dates,
   active and ended history, and validation against duplicates, invalid targets, and
   invalid date ranges.
 - Matter participation roles attached to matter references, not Party identity.
-- Resettable local sample data and clear demo-only security and privacy caveats.
+- Resettable local sample data, persistent light/dark theme preference, and clear
+  demo-only security and privacy caveats.
 
 All records are fictional. Authorization, audit, retention, identity matching,
 screening, verification, and compliance controls are not implemented. Do not enter
