@@ -56,6 +56,71 @@
 
   const clone = value => JSON.parse(JSON.stringify(value));
   function getSampleParties() { return clone(samples); }
+  const companiesHouseMockResponse = {
+    items: [
+      {
+        address: {
+          address_line_1: "68 Westfield Road",
+          country: "United Kingdom",
+          locality: "Woking",
+          postal_code: "GU22 9NG",
+          premises: "Holmecroft",
+          region: "Surrey"
+        },
+        address_snippet: "Holmecroft, 68 Westfield Road, Woking, Surrey, United Kingdom, GU22 9NG",
+        company_number: "11514939",
+        company_status: "dissolved",
+        company_type: "ltd",
+        date_of_cessation: "2019-06-04",
+        date_of_creation: "2018-08-13",
+        description: "11514939 - Dissolved on 4 June 2019",
+        description_identifier: ["dissolved-on"],
+        kind: "searchresults#company",
+        links: { self: "/company/11514939" },
+        matches: { snippet: [] },
+        snippet: "",
+        title: "ZOOMALONG LIMITED"
+      },
+      {
+        address: {
+          address_line_1: "Manor Road",
+          address_line_2: "East Molesey",
+          locality: "Surrey",
+          postal_code: "KT8 9JU",
+          premises: "17"
+        },
+        address_snippet: "17 Manor Road, East Molesey, Surrey, KT8 9JU",
+        company_number: "03553285",
+        company_status: "dissolved",
+        company_type: "ltd",
+        date_of_cessation: "2011-07-19",
+        date_of_creation: "1998-04-27",
+        description: "03553285 - Dissolved on 19 July 2011",
+        description_identifier: ["dissolved-on"],
+        kind: "searchresults#company",
+        links: { self: "/company/03553285" },
+        matches: { snippet: [] },
+        snippet: "",
+        title: "ZOOMALONG LIMITED"
+      }
+    ],
+    items_per_page: 10,
+    kind: "search#companies",
+    page_number: 1,
+    start_index: 0,
+    total_results: 2
+  };
+  function isCompaniesHouseMockSearch(name) {
+    return typeof name === "string" && name.trim().toLocaleLowerCase() === "zoomalong limited";
+  }
+  function companiesHouseRecordStatus(companyStatus) {
+    if (typeof companyStatus !== "string" || !companyStatus.trim()) return "";
+    switch (companyStatus.trim().toLocaleLowerCase()) {
+      case "active": return "Active";
+      case "dissolved": return "Archived";
+      default: return "Inactive";
+    }
+  }
   function getActiveMemberships(group) {
     return (group && group.type === "group" ? group.memberships || [] : [])
       .filter(membership => membership.status === "Active");
@@ -122,40 +187,38 @@
       return (!needle || searchable.includes(needle)) && (!type || party.type === type) && (!status || party.status === status);
     });
   }
-  function companiesHouseSearchUrl(name, proxyUrl) {
+  function companiesHouseSearchUrl(name) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
-    if (typeof proxyUrl !== "string" || !proxyUrl.trim()) throw new Error("Company search proxy is not configured.");
-    let url;
-    try {
-      url = new URL(proxyUrl);
-    } catch (error) {
-      throw new Error("Company search proxy URL is invalid.");
-    }
-    const localHttpHost = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-    if (url.protocol !== "https:" && !(url.protocol === "http:" && localHttpHost)) {
-      throw new Error("Company search proxy must use HTTPS.");
-    }
+    const url = new URL("https://api.company-information.service.gov.uk/search/companies");
     url.searchParams.set("q", name.trim());
+    url.searchParams.set("items_per_page", "10");
     return url.href;
   }
-  async function searchCompaniesHouse(name, proxyUrl, fetchImpl = globalThis.fetch, onResponse = () => {}) {
+  async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
+    if (isCompaniesHouseMockSearch(name)) {
+      const data = clone(companiesHouseMockResponse);
+      onResponse(data);
+      return data.items;
+    }
+    if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
     if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
+    const authorization = btoa(`${apiKey.trim()}:`);
     let response;
     try {
-      response = await fetchImpl(companiesHouseSearchUrl(name, proxyUrl), {
-        headers: { Accept: "application/json" }
+      response = await fetchImpl(companiesHouseSearchUrl(name), {
+        headers: { Accept: "application/json", Authorization: `Basic ${authorization}` }
       });
     } catch (error) {
       if (error instanceof TypeError) {
-        throw new Error("Could not reach the company search proxy. Check its URL and allowed CORS origin.");
+        throw new Error("Could not reach Companies House. The browser reported a network or access block; check your connection, browser extensions, and firewall. This is not an API-key rejection.");
       }
       throw error;
     }
     if (!response.ok) {
-      if (response.status === 401) throw new Error("The company search proxy requires authorization.");
+      if (response.status === 401) throw new Error("Companies House rejected the API key. Check that it is correct.");
       if (response.status === 429) throw new Error("Companies House rate limit reached. Wait a moment and try again.");
-      throw new Error(`Company search proxy failed (HTTP ${response.status}).`);
+      throw new Error(`Companies House request failed (HTTP ${response.status}).`);
     }
     const data = await response.json();
     onResponse(data);
@@ -164,6 +227,7 @@
   }
   return {
     STORAGE_KEY, TYPES, STATUSES, getSampleParties, getActiveMemberships,
-    validateParty, searchParties, companiesHouseSearchUrl, searchCompaniesHouse
+    validateParty, searchParties, companiesHouseSearchUrl, searchCompaniesHouse,
+    isCompaniesHouseMockSearch, companiesHouseRecordStatus
   };
 });

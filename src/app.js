@@ -7,15 +7,6 @@
   const dialog = $("#party-dialog");
   const form = $("#party-form");
   const THEME_STORAGE_KEY = "poc-party.theme.v1";
-  const companiesHouseProxyUrl = window.PARTY_CONFIG?.companiesHouseProxyUrl || "";
-  let companiesHouseProxyConfigError = "";
-  if (companiesHouseProxyUrl) {
-    try {
-      M.companiesHouseSearchUrl("configuration check", companiesHouseProxyUrl);
-    } catch (error) {
-      companiesHouseProxyConfigError = error instanceof Error ? error.message : "Company search proxy URL is invalid.";
-    }
-  }
   let parties = loadParties();
   let selectedId = parties[0]?.id || "";
   let detailZoom = 100;
@@ -24,6 +15,7 @@
   let companySearchInProgress = false;
   let companiesHouseResults = [];
   let lastCompanySearchName = "";
+  let lastCompanyApiKey = "";
 
   function loadTheme() {
     try {
@@ -219,6 +211,7 @@
     $("#matter-rows").replaceChildren();
     clearCompaniesHouseSearch();
     lastCompanySearchName = "";
+    lastCompanyApiKey = "";
     $("#dialog-title").textContent = party ? "Edit Party" : "New Party";
     $("#form-id").value = party?.id || "";
     $("#form-name").value = party?.displayName || "";
@@ -266,17 +259,15 @@
   }
   function updateCompaniesHouseSearch(clearIfChanged = false) {
     const companyName = $("#companies-house-query").value.trim();
-    if (clearIfChanged && companyName !== lastCompanySearchName) {
+    const apiKey = $("#companies-house-api-key").value.trim();
+    if (clearIfChanged && (companyName !== lastCompanySearchName || apiKey !== lastCompanyApiKey)) {
       clearCompaniesHouseSearch();
     }
     lastCompanySearchName = companyName;
-    if (!companiesHouseProxyUrl) {
-      $("#companies-house-search-status").textContent = "Configure the Azure Function URL in src/config.js to enable company search.";
-    } else if (companiesHouseProxyConfigError) {
-      $("#companies-house-search-status").textContent = companiesHouseProxyConfigError;
-    }
+    lastCompanyApiKey = apiKey;
+    const usesMockData = M.isCompaniesHouseMockSearch(companyName);
     $("#companies-house-search").disabled = $("#form-type").value !== "company"
-      || !companyName || !companiesHouseProxyUrl || Boolean(companiesHouseProxyConfigError) || companySearchInProgress;
+      || !companyName || (!apiKey && !usesMockData) || companySearchInProgress;
   }
   function renderCompaniesHouseResults(companies) {
     const results = $("#companies-house-results");
@@ -289,7 +280,8 @@
       const title = document.createElement("strong");
       title.textContent = company.title || "Company name unavailable";
       const details = document.createElement("small");
-      details.textContent = [company.company_number, company.company_status, company.company_type]
+      details.textContent = [company.company_number, company.company_status, company.company_type,
+        company.date_of_cessation ? `Dissolved ${company.date_of_cessation}` : ""]
         .filter(Boolean).join(" · ");
       button.append(title, details);
       const item = document.createElement("li");
@@ -300,23 +292,30 @@
   }
   async function searchCompaniesHouse() {
     const companyName = $("#companies-house-query").value.trim();
+    const apiKey = $("#companies-house-api-key").value.trim();
     const requestId = ++companySearchRequestId;
     companySearchInProgress = true;
     companiesHouseResults = [];
     updateCompaniesHouseSearch();
-    $("#companies-house-search-status").textContent = "Searching Companies House…";
+    const usesMockData = M.isCompaniesHouseMockSearch(companyName);
+    $("#companies-house-search-status").textContent = usesMockData
+      ? "Loading local mock Companies House results…"
+      : "Searching Companies House…";
     $("#companies-house-results").replaceChildren();
     $("#companies-house-results").hidden = true;
-    $("#companies-house-request-details").textContent = [
-      `GET ${M.companiesHouseSearchUrl(companyName, companiesHouseProxyUrl)}`,
-      "Accept: application/json",
-      "",
-      "(Companies House credentials are held by the proxy; no request body)"
-    ].join("\n");
+    $("#companies-house-request-details").textContent = usesMockData
+      ? `LOCAL MOCK RESPONSE for "${companyName}"\nNo network request was made.`
+      : [
+        `GET ${M.companiesHouseSearchUrl(companyName)}`,
+        "Accept: application/json",
+        "Authorization: Basic [REDACTED — API key provided in the form]",
+        "",
+        "(no request body)"
+      ].join("\n");
     $("#companies-house-response-details").textContent = "Waiting for response…";
     $("#companies-house-request").hidden = false;
     try {
-      const companies = await M.searchCompaniesHouse(companyName, companiesHouseProxyUrl, undefined, response => {
+      const companies = await M.searchCompaniesHouse(companyName, apiKey, undefined, response => {
         if (requestId === companySearchRequestId) {
           $("#companies-house-response-details").textContent = JSON.stringify(response, null, 2);
         }
@@ -325,7 +324,7 @@
       companiesHouseResults = companies;
       renderCompaniesHouseResults(companies);
       $("#companies-house-search-status").textContent = companies.length
-        ? `${companies.length} results. Select a company to use its details.`
+        ? `${companies.length} ${usesMockData ? "mock " : ""}results. Select a company to use its details.`
         : "No matching companies found.";
     } catch (error) {
       if (requestId !== companySearchRequestId) return;
@@ -350,6 +349,8 @@
     $("#form-registration").value = company.company_number || "";
     $("#form-legal-form").value = company.company_type || "";
     $("#form-jurisdiction").value = "United Kingdom";
+    const recordStatus = M.companiesHouseRecordStatus(company.company_status);
+    if (recordStatus) $("#form-status").value = recordStatus;
     $("#companies-house-query").value = company.title || "";
     updateCompaniesHouseSearch(true);
   }
@@ -461,6 +462,7 @@
   $("#companies-house-query").addEventListener("keydown", event => {
     if (event.key === "Enter") { event.preventDefault(); searchCompaniesHouse(); }
   });
+  $("#companies-house-api-key").addEventListener("input", () => updateCompaniesHouseSearch(true));
   $("#companies-house-search").addEventListener("click", searchCompaniesHouse);
   $("#companies-house-results").addEventListener("click", event => {
     const button = event.target.closest("[data-company-index]");
@@ -501,8 +503,10 @@
   });
   function closeDialog() { $("#form-type").disabled = false; dialog.close(); }
   dialog.addEventListener("close", () => {
+    $("#companies-house-api-key").value = "";
     clearCompaniesHouseSearch();
     lastCompanySearchName = "";
+    lastCompanyApiKey = "";
   });
   $("#cancel-dialog").addEventListener("click", closeDialog);
   $("#close-dialog").addEventListener("click", closeDialog);

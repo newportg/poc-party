@@ -1,17 +1,15 @@
 # Party Explorer — static proof of concept
 
 A browser-native demonstration of reusable Party records: individuals, companies,
-groups, group membership, and matter participation. The frontend is a static site
-without a build step or authoritative data. An optional Azure Functions proxy handles
-Companies House searches so the API key remains server-side.
+groups, group membership, and matter participation. This is a standalone prototype;
+it has no server, build step, dependencies, or authoritative data. Company search makes
+an HTTPS request to the Companies House API only when explicitly started by the user.
 
 ## Run
 
 Open [`src/index.html`](src/index.html) directly in a modern browser. All app scripts
 are classic browser JavaScript so the page works from a local file without a server.
-No install or build is required. Company lookup stays disabled until an Azure Function
-URL is configured in [`src/config.js`](src/config.js); follow
-[`api/README.md`](api/README.md) to run the proxy locally.
+No install or build is required.
 
 ## Publish with GitHub Pages
 
@@ -34,11 +32,18 @@ secure, backed up, or suitable for production data.
 - Choosing Company as the Party type copies the display name to the legal name and
   Companies House search fields; typing a display name for a Company keeps them in sync.
 - For Company records, search the Companies House REST API using the company lookup
-  panel, then select a result to populate the display name and company details. Search
-  uses the Azure Function proxy documented in [`api/README.md`](api/README.md); the
-  Companies House key is stored in the Function App settings, not in this site.
-- Browse and try the proxy API from the interactive [OpenAPI page](src/openapi.html) after
-  configuring the deployed function URL in `src/config.js`.
+  panel, then select a result to populate the display name and company details. Enter
+  an API key in the panel to enable search. The request method, URL, and headers are
+  shown after search alongside the JSON response; the authorization value is masked.
+- Searching for `zoomalong limited` returns the built-in mock Companies House response
+  without making a network request or requiring an API key. The mock matches the name
+  case-insensitively and is not a live Companies House result. Other company names use
+  the live API search.
+- Company search results show any returned dissolution date. Selecting a result maps
+  its Companies House status to the Party record status: active → Active, dissolved →
+  Archived, and other non-empty statuses → Inactive.
+- If search reports a network or access block, check the browser's connection,
+  extensions, and firewall. An invalid API key is reported separately as HTTP 401.
 - Stable Party IDs; type is fixed after a record is created.
 - Explicit group membership for individual/company Parties, optional roles and dates,
   active and ended history, and validation against duplicates, invalid targets, and
@@ -47,10 +52,10 @@ secure, backed up, or suitable for production data.
 - Resettable local sample data, persistent light/dark theme preference, and clear
   demo-only security and privacy caveats.
 
-Sample records are fictional; company search uses public Companies House data. The
-proxy endpoint is publicly callable so this static site can use it; CORS is not
-authentication. Add rate limiting before exposing it broadly. Selecting a search
-result is not legal verification.
+Sample records are fictional; company search uses public Companies House data. The API
+key is sent directly to Companies House over HTTPS and is not saved by this app, but a
+browser-based app cannot keep it secret. Use only on a trusted device; do not use
+shared or public computers. Selecting a search result is not legal verification.
 Authorization, audit, retention, identity matching, screening, verification, and
 compliance controls are not implemented. Do not enter personal or confidential
 information.
@@ -60,9 +65,7 @@ information.
 - Knowledge-vault project: [Party](file:///C:/Source/Obsidian/Projects/POC-Documentation/POC-Documentation-Vault/projects/Party/README.md)
 - Requirements and domain discovery: vault `projects/Party/` (`party-prd.md`, `individual-model.md`, `company-model.md`)
 - Implementation design and limitations: [`docs/design.md`](docs/design.md)
-- Azure Functions proxy setup: [`api/README.md`](api/README.md)
 
 ## Validation
 
-Run the frontend and proxy tests with
-`node --test tests/party.test.cjs api/test/proxy.test.cjs`.
+Focused, dependency-free tests: `node --test tests/party.test.cjs`
