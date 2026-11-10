@@ -122,41 +122,8 @@
       return (!needle || searchable.includes(needle)) && (!type || party.type === type) && (!status || party.status === status);
     });
   }
-  function companiesHouseSearchUrl(name) {
-    if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
-    const url = new URL("https://api.company-information.service.gov.uk/search/companies");
-    url.searchParams.set("q", name.trim());
-    url.searchParams.set("items_per_page", "10");
-    return url.href;
-  }
-  async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
-    if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
-    if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
-    if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
-    const authorization = btoa(`${apiKey.trim()}:`);
-    let response;
-    try {
-      response = await fetchImpl(companiesHouseSearchUrl(name), {
-        headers: { Accept: "application/json", Authorization: `Basic ${authorization}` }
-      });
-    } catch (error) {
-      if (error instanceof TypeError) {
-        throw new Error("Could not reach Companies House. The browser reported a network or access block; check your connection, browser extensions, and firewall. This is not an API-key rejection.");
-      }
-      throw error;
-    }
-    if (!response.ok) {
-      if (response.status === 401) throw new Error("Companies House rejected the API key. Check that it is correct.");
-      if (response.status === 429) throw new Error("Companies House rate limit reached. Wait a moment and try again.");
-      throw new Error(`Companies House request failed (HTTP ${response.status}).`);
-    }
-    const data = await response.json();
-    onResponse(data);
-    if (!data || !Array.isArray(data.items)) throw new Error("Companies House returned an unexpected response.");
-    return data.items;
-  }
   return {
     STORAGE_KEY, TYPES, STATUSES, getSampleParties, getActiveMemberships,
-    validateParty, searchParties, companiesHouseSearchUrl, searchCompaniesHouse
+    validateParty, searchParties
   };
 });
