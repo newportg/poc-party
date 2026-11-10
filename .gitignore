@@ -1,3 +1,5 @@
 .DS_Store
 Thumbs.db
 *.log
+api/local.settings.json
+api/node_modules/

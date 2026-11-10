@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0a0a0f">
   <title>Party Explorer — Static POC</title>
   <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
   <script src="./party.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
@@ -61,7 +62,7 @@
           <div class="detail-empty"><span class="empty-glyph">◈</span><h2>Select a Party</h2><p>Choose a record from the catalogue to see identity details and relationships.</p></div>
         </section>
       </section>
-      <footer class="page-footer"><span>PARTY EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>Direct Companies House API · Changes stay in this browser</span></footer>
+      <footer class="page-footer"><span>PARTY EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>Companies House proxy · Changes stay in this browser</span></footer>
     </main>
   </div>
   <dialog id="party-dialog" aria-labelledby="dialog-title">
@@ -93,12 +94,9 @@
             <label class="field">Company name<input id="companies-house-query" type="search" maxlength="160" placeholder="Enter a company name" autocomplete="off"></label>
             <button class="button button-outline" id="companies-house-search" type="button" disabled>Search</button>
           </div>
-          <div class="company-api-row">
-            <label class="field">Companies House API key<input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key"></label>
-          </div>
-          <p class="inline-guidance company-api-warning">Sent directly to Companies House over HTTPS. This static app cannot keep your key secret; it is not saved and clears when the form closes. Avoid shared or public computers.</p>
+          <p class="inline-guidance company-api-warning">Search is sent through the configured Azure Function. The Companies House API key stays in the function's server-side settings.</p>
           <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
-            <h4>Request <span>Authorization value hidden</span></h4>
+            <h4>Proxy request</h4>
             <pre><code id="companies-house-request-details"></code></pre>
             <h4>Response JSON</h4>
             <pre><code id="companies-house-response-details">Waiting for response…</code></pre>

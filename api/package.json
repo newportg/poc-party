@@ -1,0 +1,17 @@
+{
+  "name": "poc-party-companies-house-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Functions proxy for Companies House company search",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.2"
+  }
+}

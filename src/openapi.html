@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Companies House Proxy API — OpenAPI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #fafafa; }
+    header { padding: 18px 24px; color: #fff; background: #181827; font: 14px/1.5 system-ui, sans-serif; }
+    header h1 { margin: 0 0 4px; font-size: 19px; }
+    header p { margin: 0; color: #d3d1e5; }
+    #setup { max-width: 860px; margin: 24px auto; padding: 16px 20px; border: 1px solid #e1c98b; border-radius: 6px; background: #fff8e6; color: #55420f; font: 14px/1.55 system-ui, sans-serif; }
+    #setup a { color: #253b80; }
+    #swagger-ui { max-width: 1200px; margin: 0 auto; }
+    .swagger-ui .topbar { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Companies House Search Proxy</h1>
+    <p>OpenAPI reference for the Party Azure Function. Requests are forwarded to Companies House by the function.</p>
+  </header>
+  <div id="setup" role="status" hidden></div>
+  <main id="swagger-ui"></main>
+  <script src="./config.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const proxyUrl = window.PARTY_CONFIG?.companiesHouseProxyUrl || "";
+      const setup = document.querySelector("#setup");
+      if (!proxyUrl) {
+        setup.hidden = false;
+        setup.textContent = "Configure companiesHouseProxyUrl in src/config.js with the deployed Azure Function endpoint, then reload this page.";
+        return;
+      }
+      let documentUrl;
+      try {
+        const endpoint = new URL(proxyUrl);
+        if (endpoint.protocol !== "https:" && !["localhost", "127.0.0.1", "[::1]"].includes(endpoint.hostname)) {
+          throw new Error("The proxy URL must use HTTPS.");
+        }
+        endpoint.pathname = endpoint.pathname.replace(/\/companies-house-search\/?$/, "/openapi.json");
+        endpoint.search = "";
+        endpoint.hash = "";
+        documentUrl = endpoint.href;
+      } catch (error) {
+        setup.hidden = false;
+        setup.textContent = error instanceof Error ? error.message : "The Azure Function URL is invalid.";
+        return;
+      }
+      if (typeof window.SwaggerUIBundle !== "function") {
+        setup.hidden = false;
+        setup.textContent = "Swagger UI could not load. Check access to unpkg.com and reload.";
+        return;
+      }
+      window.SwaggerUIBundle({
+        url: documentUrl,
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        displayRequestDuration: true,
+        tryItOutEnabled: true
+      });
+    })();
+  </script>
+</body>
+</html>

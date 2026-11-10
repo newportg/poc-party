@@ -122,33 +122,40 @@
       return (!needle || searchable.includes(needle)) && (!type || party.type === type) && (!status || party.status === status);
     });
   }
-  function companiesHouseSearchUrl(name) {
+  function companiesHouseSearchUrl(name, proxyUrl) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
-    const url = new URL("https://api.company-information.service.gov.uk/search/companies");
+    if (typeof proxyUrl !== "string" || !proxyUrl.trim()) throw new Error("Company search proxy is not configured.");
+    let url;
+    try {
+      url = new URL(proxyUrl);
+    } catch (error) {
+      throw new Error("Company search proxy URL is invalid.");
+    }
+    const localHttpHost = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && localHttpHost)) {
+      throw new Error("Company search proxy must use HTTPS.");
+    }
     url.searchParams.set("q", name.trim());
-    url.searchParams.set("items_per_page", "10");
     return url.href;
   }
-  async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
+  async function searchCompaniesHouse(name, proxyUrl, fetchImpl = globalThis.fetch, onResponse = () => {}) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
-    if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
     if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
-    const authorization = btoa(`${apiKey.trim()}:`);
     let response;
     try {
-      response = await fetchImpl(companiesHouseSearchUrl(name), {
-        headers: { Accept: "application/json", Authorization: `Basic ${authorization}` }
+      response = await fetchImpl(companiesHouseSearchUrl(name, proxyUrl), {
+        headers: { Accept: "application/json" }
       });
     } catch (error) {
       if (error instanceof TypeError) {
-        throw new Error("Could not reach Companies House. The browser reported a network or access block; check your connection, browser extensions, and firewall. This is not an API-key rejection.");
+        throw new Error("Could not reach the company search proxy. Check its URL and allowed CORS origin.");
       }
       throw error;
     }
     if (!response.ok) {
-      if (response.status === 401) throw new Error("Companies House rejected the API key. Check that it is correct.");
+      if (response.status === 401) throw new Error("The company search proxy requires authorization.");
       if (response.status === 429) throw new Error("Companies House rate limit reached. Wait a moment and try again.");
-      throw new Error(`Companies House request failed (HTTP ${response.status}).`);
+      throw new Error(`Company search proxy failed (HTTP ${response.status}).`);
     }
     const data = await response.json();
     onResponse(data);

@@ -79,47 +79,50 @@ test("search covers identifiers, names, member names, matter references, type an
   assert.equal(M.searchParties(parties, "", "", "Inactive").length, 1);
 });
 
-test("Companies House API search sends the name and Basic-authenticated key", async () => {
+test("Companies House search calls the configured proxy without sending API credentials", async () => {
   let request;
   const expectedItems = [{ title: "ACME & SONS LTD", company_number: "01234567" }];
   let responseBody;
   const items = await M.searchCompaniesHouse(
-    "  Acme & Sons Ltd  ", " test-key ",
+    "  Acme & Sons Ltd  ", "https://example.azurewebsites.net/api/companies-house-search",
     async (url, options) => {
       request = { url: new URL(url), options };
       return { ok: true, json: async () => ({ items: expectedItems }) };
     },
     data => { responseBody = data; }
   );
-  assert.equal(request.url.origin, "https://api.company-information.service.gov.uk");
-  assert.equal(request.url.protocol, "https:");
-  assert.equal(request.url.pathname, "/search/companies");
-  assert.equal(M.companiesHouseSearchUrl("  Acme & Sons Ltd  "), request.url.href);
+  assert.equal(request.url.origin, "https://example.azurewebsites.net");
+  assert.equal(request.url.pathname, "/api/companies-house-search");
+  assert.equal(M.companiesHouseSearchUrl("  Acme & Sons Ltd  ", "https://example.azurewebsites.net/api/companies-house-search"), request.url.href);
   assert.equal(request.url.searchParams.get("q"), "Acme & Sons Ltd");
-  assert.equal(request.url.searchParams.get("items_per_page"), "10");
-  assert.equal(request.options.headers.Authorization, `Basic ${Buffer.from("test-key:").toString("base64")}`);
   assert.equal(request.options.headers.Accept, "application/json");
+  assert.equal(request.options.headers.Authorization, undefined);
   assert.deepEqual(items, expectedItems);
   assert.deepEqual(responseBody, { items: expectedItems });
 });
 
-test("Companies House request URL rejects an empty search term", () => {
-  assert.throws(() => M.companiesHouseSearchUrl("  "), /company name/);
-});
-
-test("Companies House API search reports missing input and rejected credentials", async () => {
-  await assert.rejects(M.searchCompaniesHouse("", "api-key", async () => {}), /company name/);
-  await assert.rejects(M.searchCompaniesHouse("Acme Ltd", "", async () => {}), /API key/);
-  await assert.rejects(
-    M.searchCompaniesHouse("Acme Ltd", "bad-key", async () => ({ ok: false, status: 401 })),
-    /rejected the API key/
+test("Companies House proxy URL validates the search term, configuration, and HTTPS", () => {
+  assert.throws(() => M.companiesHouseSearchUrl("  ", "https://example.com/search"), /company name/);
+  assert.throws(() => M.companiesHouseSearchUrl("Acme Ltd", ""), /not configured/);
+  assert.throws(() => M.companiesHouseSearchUrl("Acme Ltd", "http://example.com/search"), /HTTPS/);
+  assert.equal(
+    new URL(M.companiesHouseSearchUrl("Acme Ltd", "http://localhost:7071/api/search")).protocol,
+    "http:"
   );
 });
 
-test("Companies House API search explains browser network and access failures", async () => {
+test("Companies House proxy search reports missing input and HTTP failures", async () => {
+  await assert.rejects(M.searchCompaniesHouse("", "https://example.com/search", async () => {}), /company name/);
   await assert.rejects(
-    M.searchCompaniesHouse("Acme Ltd", "api-key", async () => { throw new TypeError("Failed to fetch"); }),
-    /Could not reach Companies House.*network or access block.*not an API-key rejection/
+    M.searchCompaniesHouse("Acme Ltd", "https://example.com/search", async () => ({ ok: false, status: 429 })),
+    /rate limit/
+  );
+});
+
+test("Companies House proxy search explains network and CORS failures", async () => {
+  await assert.rejects(
+    M.searchCompaniesHouse("Acme Ltd", "https://example.com/search", async () => { throw new TypeError("Failed to fetch"); }),
+    /Could not reach the company search proxy.*allowed CORS origin/
   );
 });
 

@@ -7,6 +7,15 @@
   const dialog = $("#party-dialog");
   const form = $("#party-form");
   const THEME_STORAGE_KEY = "poc-party.theme.v1";
+  const companiesHouseProxyUrl = window.PARTY_CONFIG?.companiesHouseProxyUrl || "";
+  let companiesHouseProxyConfigError = "";
+  if (companiesHouseProxyUrl) {
+    try {
+      M.companiesHouseSearchUrl("configuration check", companiesHouseProxyUrl);
+    } catch (error) {
+      companiesHouseProxyConfigError = error instanceof Error ? error.message : "Company search proxy URL is invalid.";
+    }
+  }
   let parties = loadParties();
   let selectedId = parties[0]?.id || "";
   let detailZoom = 100;
@@ -15,7 +24,6 @@
   let companySearchInProgress = false;
   let companiesHouseResults = [];
   let lastCompanySearchName = "";
-  let lastCompanyApiKey = "";
 
   function loadTheme() {
     try {
@@ -211,7 +219,6 @@
     $("#matter-rows").replaceChildren();
     clearCompaniesHouseSearch();
     lastCompanySearchName = "";
-    lastCompanyApiKey = "";
     $("#dialog-title").textContent = party ? "Edit Party" : "New Party";
     $("#form-id").value = party?.id || "";
     $("#form-name").value = party?.displayName || "";
@@ -259,14 +266,17 @@
   }
   function updateCompaniesHouseSearch(clearIfChanged = false) {
     const companyName = $("#companies-house-query").value.trim();
-    const apiKey = $("#companies-house-api-key").value.trim();
-    if (clearIfChanged && (companyName !== lastCompanySearchName || apiKey !== lastCompanyApiKey)) {
+    if (clearIfChanged && companyName !== lastCompanySearchName) {
       clearCompaniesHouseSearch();
     }
     lastCompanySearchName = companyName;
-    lastCompanyApiKey = apiKey;
+    if (!companiesHouseProxyUrl) {
+      $("#companies-house-search-status").textContent = "Configure the Azure Function URL in src/config.js to enable company search.";
+    } else if (companiesHouseProxyConfigError) {
+      $("#companies-house-search-status").textContent = companiesHouseProxyConfigError;
+    }
     $("#companies-house-search").disabled = $("#form-type").value !== "company"
-      || !companyName || !apiKey || companySearchInProgress;
+      || !companyName || !companiesHouseProxyUrl || Boolean(companiesHouseProxyConfigError) || companySearchInProgress;
   }
   function renderCompaniesHouseResults(companies) {
     const results = $("#companies-house-results");
@@ -290,7 +300,6 @@
   }
   async function searchCompaniesHouse() {
     const companyName = $("#companies-house-query").value.trim();
-    const apiKey = $("#companies-house-api-key").value.trim();
     const requestId = ++companySearchRequestId;
     companySearchInProgress = true;
     companiesHouseResults = [];
@@ -299,16 +308,15 @@
     $("#companies-house-results").replaceChildren();
     $("#companies-house-results").hidden = true;
     $("#companies-house-request-details").textContent = [
-      `GET ${M.companiesHouseSearchUrl(companyName)}`,
+      `GET ${M.companiesHouseSearchUrl(companyName, companiesHouseProxyUrl)}`,
       "Accept: application/json",
-      "Authorization: Basic [REDACTED — API key provided in the form]",
       "",
-      "(no request body)"
+      "(Companies House credentials are held by the proxy; no request body)"
     ].join("\n");
     $("#companies-house-response-details").textContent = "Waiting for response…";
     $("#companies-house-request").hidden = false;
     try {
-      const companies = await M.searchCompaniesHouse(companyName, apiKey, undefined, response => {
+      const companies = await M.searchCompaniesHouse(companyName, companiesHouseProxyUrl, undefined, response => {
         if (requestId === companySearchRequestId) {
           $("#companies-house-response-details").textContent = JSON.stringify(response, null, 2);
         }
@@ -453,7 +461,6 @@
   $("#companies-house-query").addEventListener("keydown", event => {
     if (event.key === "Enter") { event.preventDefault(); searchCompaniesHouse(); }
   });
-  $("#companies-house-api-key").addEventListener("input", () => updateCompaniesHouseSearch(true));
   $("#companies-house-search").addEventListener("click", searchCompaniesHouse);
   $("#companies-house-results").addEventListener("click", event => {
     const button = event.target.closest("[data-company-index]");
@@ -494,10 +501,8 @@
   });
   function closeDialog() { $("#form-type").disabled = false; dialog.close(); }
   dialog.addEventListener("close", () => {
-    $("#companies-house-api-key").value = "";
     clearCompaniesHouseSearch();
     lastCompanySearchName = "";
-    lastCompanyApiKey = "";
   });
   $("#cancel-dialog").addEventListener("click", closeDialog);
   $("#close-dialog").addEventListener("click", closeDialog);

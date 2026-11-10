@@ -26,18 +26,16 @@ and persists the complete fictional collection under `poc-party.records.v1` in
 `localStorage`. The reset action replaces it with the original sample set. It makes no
 automatic network requests until a Company search is explicitly requested. Selecting
 Company as the Party type copies the display name into the legal-name and Companies
-House search fields; editing a Company display name keeps those fields in sync. Company
-detail fields include a dedicated Companies House lookup panel. It accepts a
-company-name query and API key, then sends a Basic-authenticated HTTPS request to
-`/search/companies`. Selecting a result populates the display name, legal name,
-registration number, legal form, and jurisdiction. The key stays in the open form only,
-is not persisted, and is cleared when the form closes. Because requests originate in
-the browser, the key is visible to the user and cannot be kept secret by this static
-app; use only on a trusted device. A server-side proxy is required to protect a shared
-application key. Selecting a register result does not constitute legal verification.
-After each search, the form shows the GET URL and request headers; the Authorization
-value is masked so the API key is not displayed in the request preview. The response
-JSON is displayed as escaped text for inspection.
+House search fields; editing a Company display name keeps those fields in sync. The
+lookup panel calls the configured URL in `src/config.js`. The Azure Functions proxy
+adds the server-side API key, validates the search, limits results, and forwards the
+Companies House JSON response. The key is configured as a Function App setting and is
+never sent to the browser. The frontend shows the proxy request and escaped response
+JSON. Selecting a register result does not constitute legal verification. The
+unauthenticated proxy endpoint is publicly callable; CORS is not access control, so a
+production deployment should add rate limiting. `src/openapi.html` is an interactive
+Swagger UI page for the OpenAPI 3 document served at `/api/openapi.json`; its Try it out
+requests go to the deployed proxy endpoint.
 
 ## Validation boundaries
 
