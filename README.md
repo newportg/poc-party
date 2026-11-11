@@ -76,6 +76,8 @@ configured to use the local API, and opens it in your browser. The repository's
 Enter in the script window to stop the container and local client server. To use
 different ports, pass `-ApiPort` and
 `-ClientPort`, for example `.\scripts\run-local.ps1 -ApiPort 8001 -ClientPort 5174`.
+If the default client port `5173` is already in use, the script automatically
+selects the next available port.
 The interactive company search still requires your Companies House API key.
 
 ## Project links

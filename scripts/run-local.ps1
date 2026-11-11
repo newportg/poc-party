@@ -17,6 +17,7 @@ $containerName = "poc-party-local-api-$PID"
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "poc-party-local-$([guid]::NewGuid().ToString('N'))"
 $staticProcess = $null
 $containerStarted = $false
+$clientPortWasSpecified = $PSBoundParameters.ContainsKey("ClientPort")
 
 function Invoke-Podman {
     param([string[]]$Arguments)
@@ -27,12 +28,35 @@ function Invoke-Podman {
     }
 }
 
+function Test-LocalPortInUse {
+    param([int]$Port)
+
+    return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen `
+        -ErrorAction SilentlyContinue)
+}
+
 try {
     if (-not (Get-Command podman -ErrorAction SilentlyContinue)) {
         throw "Podman was not found. Install Podman Desktop or add podman to PATH."
     }
     if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
         throw "Node.js was not found. Install Node.js to serve the browser client locally."
+    }
+
+    if (Test-LocalPortInUse $ClientPort) {
+        if ($clientPortWasSpecified) {
+            throw "Client port $ClientPort is already in use. Stop the existing client or choose another port with -ClientPort."
+        }
+
+        $requestedClientPort = $ClientPort
+        do {
+            $ClientPort++
+        } while ($ClientPort -le 65535 -and (Test-LocalPortInUse $ClientPort))
+
+        if ($ClientPort -gt 65535) {
+            throw "No available client port was found after port $requestedClientPort."
+        }
+        Write-Host "Client port $requestedClientPort is in use; using available port $ClientPort."
     }
 
     & podman info *> $null
@@ -93,9 +117,14 @@ try {
     $clientReady = $false
     for ($attempt = 0; $attempt -lt 10; $attempt++) {
         try {
-            $null = Invoke-WebRequest -Uri $clientUrl -TimeoutSec 2 -UseBasicParsing
-            $clientReady = $true
-            break
+            if ($staticProcess.HasExited) {
+                break
+            }
+            $clientResponse = Invoke-WebRequest -Uri $clientUrl -TimeoutSec 2 -UseBasicParsing
+            if ($clientResponse.Content -match "Party Explorer") {
+                $clientReady = $true
+                break
+            }
         } catch {
             Start-Sleep -Milliseconds 500
         }
@@ -104,7 +133,7 @@ try {
         if (Test-Path $stderrLog) {
             Get-Content -LiteralPath $stderrLog
         }
-        throw "The local client server did not start at $clientUrl."
+        throw "The Party client server did not start correctly at $clientUrl."
     }
 
     Write-Host "API docs: $localApiUrl/docs"
