@@ -29,15 +29,24 @@ Company as the Party type copies the display name into the legal-name and Compan
 House search fields; editing a Company display name keeps those fields in sync. Company
 detail fields include a dedicated Companies House lookup panel. It accepts a
 company-name query and API key, then sends a Basic-authenticated HTTPS request to
-`/search/companies`. Selecting a result populates the display name, legal name,
-registration number, legal form, and jurisdiction. The key stays in the open form only,
-is not persisted, and is cleared when the form closes. Because requests originate in
-the browser, the key is visible to the user and cannot be kept secret by this static
-app; use only on a trusted device. A server-side proxy is required to protect a shared
-application key. Selecting a register result does not constitute legal verification.
-After each search, the form shows the GET URL and request headers; the Authorization
-value is masked so the API key is not displayed in the request preview. The response
-JSON is displayed as escaped text for inspection.
+`/search/companies`. When `window.PARTY_API_BASE_URL` is set in `src/config.js`, the
+browser instead calls the FastAPI service at `/api/companies/search` and provides the
+key in the `X-Companies-House-Api-Key` header. The service forwards the key to
+Companies House using Basic authentication. At startup, the browser calls the
+service's `/heartbeat` endpoint, which wakes a sleeping Render service. Selecting a
+result populates the display name, legal name, registration number, legal form, and
+jurisdiction. The key stays in the open form only, is not persisted, and is cleared
+when the form closes. Because requests originate in the browser, the key is visible
+to the user and cannot be kept secret by this static app; use only on a trusted
+device. Selecting a register result does not constitute legal verification. After
+each search, the form shows the GET URL and request headers; the API key is masked so
+it is not displayed in the request preview. The response JSON is displayed as escaped
+text for inspection.
+
+The optional Python service is configured by `render.yaml`. Its OpenAPI document and
+Swagger UI are available at `/openapi.json` and `/docs`; `/health` is Render's health
+check endpoint and `/heartbeat` is for client startup. The caller supplies its own
+Companies House API key for each search; the service does not store it.
 
 ## Validation boundaries
 

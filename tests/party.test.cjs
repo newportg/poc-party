@@ -147,6 +147,61 @@ test("Companies House request URL rejects an empty search term", () => {
   assert.throws(() => M.companiesHouseSearchUrl("  "), /company name/);
 });
 
+test("Companies House service search forwards the key in a header, not the URL", async () => {
+  let request;
+  const expectedItems = [{ title: "ACME LTD", company_number: "01234567" }];
+  let responseBody;
+  const items = await M.searchCompaniesHouseViaService(
+    "https://companies-house.example/",
+    "  Acme Ltd  ",
+    " client-key ",
+    async (url, options) => {
+      request = { url: new URL(url), options };
+      return { ok: true, json: async () => ({ items: expectedItems }) };
+    },
+    data => { responseBody = data; }
+  );
+
+  assert.equal(request.url.href, "https://companies-house.example/api/companies/search?q=Acme+Ltd");
+  assert.equal(request.url.searchParams.get("q"), "Acme Ltd");
+  assert.equal(request.url.searchParams.get("client-key"), null);
+  assert.equal(request.options.headers["X-Companies-House-Api-Key"], "client-key");
+  assert.equal(request.options.headers.Accept, "application/json");
+  assert.deepEqual(items, expectedItems);
+  assert.deepEqual(responseBody, { items: expectedItems });
+});
+
+test("Companies House service search reports missing configuration and rejected credentials", async () => {
+  await assert.rejects(
+    M.searchCompaniesHouseViaService("", "Acme Ltd", "api-key", async () => {}),
+    /service URL is not configured/
+  );
+  await assert.rejects(
+    M.searchCompaniesHouseViaService("https://companies-house.example", "Acme Ltd", "", async () => {}),
+    /API key/
+  );
+  await assert.rejects(
+    M.searchCompaniesHouseViaService(
+      "https://companies-house.example",
+      "Acme Ltd",
+      "bad-key",
+      async () => ({ ok: false, status: 401 })
+    ),
+    /rejected the API key/
+  );
+});
+
+test("Companies House service refuses insecure non-local URLs", () => {
+  assert.throws(
+    () => M.companiesHouseServiceSearchUrl("http://companies-house.example", "Acme Ltd"),
+    /must use HTTPS/
+  );
+  assert.equal(
+    M.companiesHouseServiceSearchUrl("http://localhost:8000", "Acme Ltd"),
+    "http://localhost:8000/api/companies/search?q=Acme+Ltd"
+  );
+});
+
 test("Companies House API search reports missing input and rejected credentials", async () => {
   await assert.rejects(M.searchCompaniesHouse("", "api-key", async () => {}), /company name/);
   await assert.rejects(M.searchCompaniesHouse("Acme Ltd", "", async () => {}), /API key/);

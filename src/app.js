@@ -16,6 +16,9 @@
   let companiesHouseResults = [];
   let lastCompanySearchName = "";
   let lastCompanyApiKey = "";
+  const companiesHouseServiceUrl = typeof window.PARTY_API_BASE_URL === "string"
+    ? window.PARTY_API_BASE_URL.trim().replace(/\/+$/, "")
+    : "";
 
   function loadTheme() {
     try {
@@ -303,19 +306,27 @@
       : "Searching Companies House…";
     $("#companies-house-results").replaceChildren();
     $("#companies-house-results").hidden = true;
-    $("#companies-house-request-details").textContent = usesMockData
-      ? `LOCAL MOCK RESPONSE for "${companyName}"\nNo network request was made.`
-      : [
-        `GET ${M.companiesHouseSearchUrl(companyName)}`,
-        "Accept: application/json",
-        "Authorization: Basic [REDACTED — API key provided in the form]",
-        "",
-        "(no request body)"
-      ].join("\n");
     $("#companies-house-response-details").textContent = "Waiting for response…";
     $("#companies-house-request").hidden = false;
     try {
-      const companies = await M.searchCompaniesHouse(companyName, apiKey, undefined, response => {
+      const serviceSearchUrl = companiesHouseServiceUrl && !usesMockData
+        ? M.companiesHouseServiceSearchUrl(companiesHouseServiceUrl, companyName)
+        : "";
+      $("#companies-house-request-details").textContent = usesMockData
+        ? `LOCAL MOCK RESPONSE for "${companyName}"\nNo network request was made.`
+        : [
+          `GET ${serviceSearchUrl || M.companiesHouseSearchUrl(companyName)}`,
+          "Accept: application/json",
+          serviceSearchUrl
+            ? "X-Companies-House-Api-Key: [REDACTED — API key provided in the form]"
+            : "Authorization: Basic [REDACTED — API key provided in the form]",
+          "",
+          "(no request body)"
+        ].join("\n");
+      const search = companiesHouseServiceUrl && !usesMockData
+        ? M.searchCompaniesHouseViaService.bind(null, companiesHouseServiceUrl)
+        : M.searchCompaniesHouse;
+      const companies = await search(companyName, apiKey, undefined, response => {
         if (requestId === companySearchRequestId) {
           $("#companies-house-response-details").textContent = JSON.stringify(response, null, 2);
         }
@@ -502,6 +513,24 @@
     showToast(index >= 0 ? "Party updated in this browser." : "Party created in this browser.");
   });
   function closeDialog() { $("#form-type").disabled = false; dialog.close(); }
+  async function wakeCompaniesHouseService() {
+    if (!companiesHouseServiceUrl) return;
+    let lastError;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        const response = await fetch(`${companiesHouseServiceUrl}/heartbeat`, {
+          headers: { Accept: "application/json" }
+        });
+        if (!response.ok) throw new Error(`Heartbeat failed (HTTP ${response.status}).`);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 1000 * (2 ** attempt)));
+      }
+    }
+    console.error("Could not wake the Companies House service.", lastError);
+    showToast("Companies House service could not be reached. Company search may be unavailable.", "error");
+  }
   dialog.addEventListener("close", () => {
     $("#companies-house-api-key").value = "";
     clearCompaniesHouseSearch();
@@ -525,4 +554,5 @@
     }
   });
   renderList();
+  void wakeCompaniesHouseService();
 })();

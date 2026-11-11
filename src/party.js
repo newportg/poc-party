@@ -194,6 +194,41 @@
     url.searchParams.set("items_per_page", "10");
     return url.href;
   }
+  function companiesHouseServiceSearchUrl(baseUrl, name) {
+    if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
+    if (typeof baseUrl !== "string" || !baseUrl.trim()) throw new Error("Companies House service URL is not configured.");
+    const url = new URL("/api/companies/search", baseUrl.trim());
+    if (url.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(url.hostname)) {
+      throw new Error("Companies House service URL must use HTTPS.");
+    }
+    url.searchParams.set("q", name.trim());
+    return url.href;
+  }
+  async function searchCompaniesHouseViaService(baseUrl, name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
+    if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
+    if (typeof apiKey !== "string" || !apiKey.trim()) throw new Error("Enter your Companies House API key.");
+    if (typeof fetchImpl !== "function") throw new Error("Fetch is not available in this browser.");
+    let response;
+    try {
+      response = await fetchImpl(companiesHouseServiceSearchUrl(baseUrl, name), {
+        headers: { Accept: "application/json", "X-Companies-House-Api-Key": apiKey.trim() }
+      });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error("Could not reach the Companies House service. Check that the Render service is awake and its CORS settings allow this app.");
+      }
+      throw error;
+    }
+    if (!response.ok) {
+      if (response.status === 401) throw new Error("Companies House rejected the API key. Check that it is correct.");
+      if (response.status === 429) throw new Error("Companies House rate limit reached. Wait a moment and try again.");
+      throw new Error(`Companies House service request failed (HTTP ${response.status}).`);
+    }
+    const data = await response.json();
+    onResponse(data);
+    if (!data || !Array.isArray(data.items)) throw new Error("Companies House returned an unexpected response.");
+    return data.items;
+  }
   async function searchCompaniesHouse(name, apiKey, fetchImpl = globalThis.fetch, onResponse = () => {}) {
     if (typeof name !== "string" || !name.trim()) throw new Error("Enter a company name to search.");
     if (isCompaniesHouseMockSearch(name)) {
@@ -227,7 +262,8 @@
   }
   return {
     STORAGE_KEY, TYPES, STATUSES, getSampleParties, getActiveMemberships,
-    validateParty, searchParties, companiesHouseSearchUrl, searchCompaniesHouse,
+    validateParty, searchParties, companiesHouseSearchUrl, companiesHouseServiceSearchUrl,
+    searchCompaniesHouse, searchCompaniesHouseViaService,
     isCompaniesHouseMockSearch, companiesHouseRecordStatus
   };
 });

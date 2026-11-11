@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0a0a0f">
   <title>Party Explorer — Static POC</title>
   <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
   <script src="./party.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
@@ -96,7 +97,7 @@
           <div class="company-api-row">
             <label class="field">Companies House API key<input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key"></label>
           </div>
-          <p class="inline-guidance company-api-warning">Sent directly to Companies House over HTTPS. This static app cannot keep your key secret; it is not saved and clears when the form closes. Avoid shared or public computers.</p>
+          <p class="inline-guidance company-api-warning">Sent to the configured Companies House service over HTTPS, then forwarded to Companies House. The key is not saved and clears when the form closes. Avoid shared or public computers.</p>
           <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
             <h4>Request <span>Authorization value hidden</span></h4>
             <pre><code id="companies-house-request-details"></code></pre>

@@ -1,9 +1,10 @@
 # Party Explorer — static proof of concept
 
 A browser-native demonstration of reusable Party records: individuals, companies,
-groups, group membership, and matter participation. This is a standalone prototype;
-it has no server, build step, dependencies, or authoritative data. Company search makes
-an HTTPS request to the Companies House API only when explicitly started by the user.
+groups, group membership, and matter participation. The browser app is a standalone
+prototype; company search makes an HTTPS request only when explicitly started by the
+user. An optional Python service proxies Companies House requests and can be hosted on
+Render.
 
 ## Run
 
@@ -34,7 +35,7 @@ secure, backed up, or suitable for production data.
 - For Company records, search the Companies House REST API using the company lookup
   panel, then select a result to populate the display name and company details. Enter
   an API key in the panel to enable search. The request method, URL, and headers are
-  shown after search alongside the JSON response; the authorization value is masked.
+  shown after search alongside the JSON response; the API key is masked.
 - Searching for `zoomalong limited` returns the built-in mock Companies House response
   without making a network request or requiring an API key. The mock matches the name
   case-insensitively and is not a live Companies House result. Other company names use
@@ -53,12 +54,46 @@ secure, backed up, or suitable for production data.
   demo-only security and privacy caveats.
 
 Sample records are fictional; company search uses public Companies House data. The API
-key is sent directly to Companies House over HTTPS and is not saved by this app, but a
-browser-based app cannot keep it secret. Use only on a trusted device; do not use
-shared or public computers. Selecting a search result is not legal verification.
+key is sent to the configured service over HTTPS, then forwarded to Companies House;
+it is not saved by the app or service, but a browser-based app cannot keep it secret.
+Use only on a trusted device; do not use shared or public computers. Selecting a
+search result is not legal verification.
 Authorization, audit, retention, identity matching, screening, verification, and
 compliance controls are not implemented. Do not enter personal or confidential
 information.
+
+## Companies House service on Render
+
+The optional FastAPI service in `api/` provides `/api/companies/search`, `/health`,
+`/heartbeat`, and generated OpenAPI documentation at `/docs` and `/openapi.json`.
+The client sends its Companies House API key in the
+`X-Companies-House-Api-Key` header; the service forwards it to Companies House using
+Basic authentication. The key is not stored by the service.
+
+1. In Render, create a Blueprint from this repository and use the included
+   `render.yaml`, or create a Python web service with `api/` as its root directory.
+2. Set `CORS_ORIGINS` to the exact origin(s) where the static app is hosted, separated
+   by commas. For example, a GitHub Pages site has an origin like
+   `https://<owner>.github.io`. The service defaults to `*` if this variable is unset.
+3. In the Render service settings, create a deploy hook. In GitHub, add a repository
+   Actions secret named `RENDER_DEPLOY_HOOK_URL` with that hook URL. Disable Render's
+   automatic Git deployments to avoid deploying the same commit twice. The
+   **Deploy Companies House API to Render** workflow runs the API tests and calls the
+   deploy hook on pushes to `master` that change `api/`, `render.yaml`, or the workflow
+   itself; it can also be started manually from the Actions tab. Configure secrets
+   under **Settings → Secrets and variables → Actions**.
+4. After deployment, set `window.PARTY_API_BASE_URL` in `src/config.js` to the
+   service's base URL, such as `https://companies-house-proxy.onrender.com`.
+5. Publish the updated static app. On startup it calls `/heartbeat` to wake the Render
+   service; subsequent live company searches use the proxy. The Companies House key
+   remains client-supplied and is sent only when the user explicitly searches.
+
+If `PARTY_API_BASE_URL` is empty, the app retains its existing direct-to-Companies
+House search behavior. A Render service that has spun down may take time to respond
+to its first request.
+
+Run the API from the `api/` directory with `pip install -r requirements.txt` and
+`uvicorn main:app --reload`. Run its focused tests with `python -m unittest -v`.
 
 ## Project links
 
@@ -68,4 +103,5 @@ information.
 
 ## Validation
 
-Focused, dependency-free tests: `node --test tests/party.test.cjs`
+Focused frontend tests: `node --test tests/party.test.cjs`. API tests:
+`cd api && python -m unittest -v`.
