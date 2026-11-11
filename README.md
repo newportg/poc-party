@@ -62,38 +62,21 @@ Authorization, audit, retention, identity matching, screening, verification, and
 compliance controls are not implemented. Do not enter personal or confidential
 information.
 
-## Companies House service on Render
+## Run the API and client locally with Podman
 
-The optional FastAPI service in `api/` provides `/api/companies/search`, `/health`,
-`/heartbeat`, and generated OpenAPI documentation at `/docs` and `/openapi.json`.
-The client sends its Companies House API key in the
-`X-Companies-House-Api-Key` header; the service forwards it to Companies House using
-Basic authentication. The key is not stored by the service.
+Install Podman Desktop and Node.js, then run this from PowerShell in the repository:
 
-1. In Render, create a Blueprint from this repository and use the included
-   `render.yaml`, or create a Python web service with `api/` as its root directory.
-2. Set `CORS_ORIGINS` to the exact origin(s) where the static app is hosted, separated
-   by commas. For example, a GitHub Pages site has an origin like
-   `https://<owner>.github.io`. The service defaults to `*` if this variable is unset.
-3. In the Render service settings, create a deploy hook. In GitHub, add a repository
-   Actions secret named `RENDER_DEPLOY_HOOK_URL` with that hook URL. Disable Render's
-   automatic Git deployments to avoid deploying the same commit twice. The
-   **Deploy Companies House API to Render** workflow runs the API tests and calls the
-   deploy hook on pushes to `master` that change `api/`, `render.yaml`, or the workflow
-   itself; it can also be started manually from the Actions tab. Configure secrets
-   under **Settings → Secrets and variables → Actions**.
-4. After deployment, set `window.PARTY_API_BASE_URL` in `src/config.js` to the
-   service's base URL, such as `https://companies-house-proxy.onrender.com`.
-5. Publish the updated static app. On startup it calls `/heartbeat` to wake the Render
-   service; subsequent live company searches use the proxy. The Companies House key
-   remains client-supplied and is sent only when the user explicitly searches.
+```powershell
+.\scripts\run-local.ps1
+```
 
-If `PARTY_API_BASE_URL` is empty, the app retains its existing direct-to-Companies
-House search behavior. A Render service that has spun down may take time to respond
-to its first request.
-
-Run the API from the `api/` directory with `pip install -r requirements.txt` and
-`uvicorn main:app --reload`. Run its focused tests with `python -m unittest -v`.
+The script builds and starts the API container, serves a temporary copy of the client
+configured to use the local API, and opens it in your browser. The repository's
+`src/config.js` is left unchanged, and the local API listens on loopback only. Press
+Enter in the script window to stop the container and local client server. To use
+different ports, pass `-ApiPort` and
+`-ClientPort`, for example `.\scripts\run-local.ps1 -ApiPort 8001 -ClientPort 5174`.
+The interactive company search still requires your Companies House API key.
 
 ## Project links
 
