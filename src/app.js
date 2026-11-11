@@ -20,6 +20,17 @@
     ? window.PARTY_API_BASE_URL.trim().replace(/\/+$/, "")
     : "";
 
+  function bindSecretToggle(button) {
+    const input = document.getElementById(button.dataset.revealTarget);
+    if (!input) return;
+    button.addEventListener("click", () => {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      button.setAttribute("aria-label", showing ? "Show API key" : "Hide API key");
+      button.title = showing ? "Show API key" : "Hide API key";
+    });
+  }
+
   function loadTheme() {
     try {
       return localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark";
@@ -473,6 +484,7 @@
   $("#companies-house-query").addEventListener("keydown", event => {
     if (event.key === "Enter") { event.preventDefault(); searchCompaniesHouse(); }
   });
+  document.querySelectorAll("[data-reveal-target]").forEach(bindSecretToggle);
   $("#companies-house-api-key").addEventListener("input", () => updateCompaniesHouseSearch(true));
   $("#companies-house-search").addEventListener("click", searchCompaniesHouse);
   $("#companies-house-results").addEventListener("click", event => {

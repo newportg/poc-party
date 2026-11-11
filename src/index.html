@@ -96,7 +96,14 @@
             <button class="button button-outline" id="companies-house-search" type="button" disabled>Search</button>
           </div>
           <div class="company-api-row">
-            <label class="field">Companies House API key<input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key"></label>
+            <label class="field">Companies House API key
+              <span class="secret-input">
+                <input id="companies-house-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your API key">
+                <button class="reveal-button" type="button" data-reveal-target="companies-house-api-key" aria-label="Show API key" title="Show API key">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+                </button>
+              </span>
+            </label>
           </div>
           <p class="inline-guidance company-api-warning">Sent to the configured Companies House service over HTTPS, then forwarded to Companies House. The key is not saved and clears when the form closes. Avoid shared or public computers.</p>
           <section class="company-request" id="companies-house-request" aria-label="Companies House API request" hidden>
