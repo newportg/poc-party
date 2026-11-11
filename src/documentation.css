@@ -1,0 +1,35 @@
+.docs-main { max-width: 1040px; }
+.docs-intro { margin-bottom: 24px; }
+.docs-intro > p { max-width: 700px; color: var(--muted); margin: 0; }
+.docs-toc { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 14px 18px; margin-bottom: 16px; }
+.docs-toc strong { color: #c7c5d8; font-size: 11px; }
+.docs-toc a,.page-footer a { color: #aaa5ff; text-decoration: none; }
+.docs-toc a { font-size: 11px; }
+.docs-toc a:hover,.page-footer a:hover { text-decoration: underline; }
+.docs-section { padding: clamp(18px, 3vw, 28px); margin-bottom: 16px; scroll-margin-top: 20px; }
+.docs-section h2 { margin: 5px 0 10px; font-size: clamp(18px, 2.4vw, 23px); letter-spacing: -.4px; }
+.docs-section p,.docs-list { color: #b0afbf; font-size: 12px; }
+.docs-section p { max-width: 850px; margin: 8px 0; }
+.docs-section code { color: #d3ceff; background: #222133; border: 1px solid #343249; border-radius: 4px; padding: 1px 5px; font-size: .92em; }
+.docs-diagram { margin: 20px 0 16px; padding: 15px; border: 1px solid #292936; border-radius: 9px; background: #0f0f17; }
+.docs-diagram svg { display: block; width: 100%; height: auto; }
+.docs-diagram figcaption { margin-top: 9px; color: #85849a; font-size: 10px; }
+.docs-callout { display: grid; gap: 4px; padding: 12px 14px; border-left: 2px solid #7772f5; background: #171721; color: #a7a5b7; font-size: 11px; }
+.docs-callout strong { color: #d8d6e7; }
+.docs-list { display: grid; gap: 8px; padding-left: 22px; }
+.docs-section ol.docs-list { padding-left: 24px; }
+.docs-section li { padding-left: 2px; }
+.docs-section li::marker { color: #918bff; }
+.docs-section strong { color: #d8d6e7; }
+[data-theme="light"] .docs-toc strong,[data-theme="light"] .docs-section strong { color: #34344f; }
+[data-theme="light"] .docs-section p,[data-theme="light"] .docs-list { color: #55566b; }
+[data-theme="light"] .docs-section code { color: #443c9f; background: #f0efff; border-color: #dedcf8; }
+[data-theme="light"] .docs-diagram { border-color: #e0e1eb; background: #f8f8fc; }
+[data-theme="light"] .docs-diagram figcaption { color: #696a80; }
+[data-theme="light"] .docs-callout { background: #f2f1fc; color: #55566b; }
+[data-theme="light"] .docs-callout strong { color: #34344f; }
+[data-theme="light"] .docs-toc a,[data-theme="light"] .page-footer a { color: #514bb1; }
+@media (max-width: 650px) {
+  .docs-toc { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .docs-diagram { padding: 8px; }
+}

@@ -25,6 +25,8 @@ requiring a backend for the main flow.
 The current implementation is split into the following layers:
 
 - `src/index.html`: page skeleton and form layout
+- `src/documentation.html`: in-app guide published alongside the static client
+- `src/documentation.css`: styles for the in-app documentation page
 - `src/config.js`: runtime config for the optional Company API service URL
 - `src/party.js`: domain model, sample fixtures, validation, and search helpers
 - `src/app.js`: render logic, event handling, localStorage persistence, and UI state

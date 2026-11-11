@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Documentation — Party Explorer</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./documentation.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Party Explorer home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>Party<span class="brand-light"> Explorer</span><small>REUSABLE PARTY RECORDS</small></span>
+      </a>
+      <div class="header-actions">
+        <a class="button button-primary" href="./index.html">Open the app</a>
+      </div>
+    </header>
+
+    <main class="docs-main">
+      <div class="docs-intro">
+        <div class="eyebrow">PARTY EXPLORER <span class="eyebrow-line"></span> DOCUMENTATION</div>
+        <h1>How the POC works</h1>
+        <p>A guide to the Party catalogue, its relationships, company lookup, and the limits of this demonstration.</p>
+      </div>
+
+      <aside class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <span><strong>Demonstration only.</strong> Data is fictional or entered in your browser. Do not enter real personal or confidential information. A Companies House match is not legal verification.</span>
+      </aside>
+
+      <nav class="docs-toc panel" aria-label="Documentation contents">
+        <strong>On this page</strong>
+        <a href="#overview">Overview</a>
+        <a href="#party-model">Party model</a>
+        <a href="#using-the-app">Using the app</a>
+        <a href="#company-search">Company search</a>
+        <a href="#implementation">Implementation</a>
+        <a href="#data-and-privacy">Data and limitations</a>
+      </nav>
+
+      <section class="docs-section panel" id="overview">
+        <div class="section-kicker">OVERVIEW</div>
+        <h2>One reusable record for each Party</h2>
+        <p>The POC explores how a person, company, or group can have a stable identity that can be referenced in different matters. It is a static browser app: the main catalogue works without a backend, build step, or account.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 190" role="img" aria-labelledby="architecture-title architecture-desc">
+            <title id="architecture-title">Party Explorer application architecture</title>
+            <desc id="architecture-desc">The browser app uses Party domain logic and local browser storage. An optional API service proxies company lookups to Companies House.</desc>
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker>
+            </defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="20" y="52" width="190" height="82" rx="12"/>
+              <rect x="270" y="52" width="190" height="82" rx="12"/>
+              <rect x="520" y="12" width="175" height="68" rx="12"/>
+              <rect x="520" y="108" width="175" height="68" rx="12"/>
+              <rect x="755" y="108" width="125" height="68" rx="12"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="115" y="86" font-size="16" font-weight="700">Browser UI</text><text x="115" y="109" fill="#a5a3b8" font-size="12">HTML + JavaScript</text>
+              <text x="365" y="86" font-size="16" font-weight="700">Party model</text><text x="365" y="109" fill="#a5a3b8" font-size="12">rules + sample records</text>
+              <text x="607" y="42" font-size="15" font-weight="700">Browser storage</text><text x="607" y="62" fill="#a5a3b8" font-size="11">localStorage</text>
+              <text x="607" y="137" font-size="15" font-weight="700">Optional API</text><text x="607" y="157" fill="#a5a3b8" font-size="11">FastAPI proxy</text>
+              <text x="817" y="137" font-size="14" font-weight="700">Companies</text><text x="817" y="157" fill="#a5a3b8" font-size="11">House</text>
+            </g>
+            <g fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#arrow)">
+              <path d="M210 93 H260"/><path d="M460 75 L510 52"/><path d="M460 112 L510 137"/><path d="M695 142 H745"/>
+            </g>
+            <text x="235" y="80" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">uses</text>
+            <text x="484" y="48" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">saves</text>
+            <text x="484" y="145" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">search</text>
+          </svg>
+          <figcaption>Core catalogue data stays in the browser; the API is only involved in configured company searches.</figcaption>
+        </figure>
+        <div class="docs-callout">
+          <strong>Implementation files</strong>
+          <span><code>index.html</code> and <code>app.js</code> provide the interface, <code>party.js</code> contains the domain rules and fixtures, and <code>config.js</code> controls the optional API URL.</span>
+        </div>
+      </section>
+
+      <section class="docs-section panel" id="party-model">
+        <div class="section-kicker">PARTY MODEL</div>
+        <h2>Identity and relationships</h2>
+        <p>Every record has a stable demo ID, a type, a display name, a status, and illustrative timestamps. Type-specific fields describe individuals and companies. Groups are Parties too; their members are represented by separate membership links.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 280" role="img" aria-labelledby="model-title model-desc">
+            <title id="model-title">Party model and relationships</title>
+            <desc id="model-desc">A Party can be an individual, company, or group. A group has effective-dated membership links to individual or company Parties. Any Party may have contextual matter participation records.</desc>
+            <defs>
+              <marker id="model-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker>
+            </defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="345" y="18" width="210" height="70" rx="12"/>
+              <rect x="55" y="155" width="180" height="75" rx="12"/>
+              <rect x="360" y="155" width="180" height="75" rx="12"/>
+              <rect x="665" y="155" width="180" height="75" rx="12"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="450" y="48" font-size="17" font-weight="700">Party</text><text x="450" y="70" fill="#a5a3b8" font-size="12">ID · type · name · status</text>
+              <text x="145" y="186" font-size="16" font-weight="700">Individual</text><text x="145" y="208" fill="#a5a3b8" font-size="11">name · DOB · nationality</text>
+              <text x="450" y="186" font-size="16" font-weight="700">Company</text><text x="450" y="208" fill="#a5a3b8" font-size="11">legal name · registration</text>
+              <text x="755" y="186" font-size="16" font-weight="700">Group</text><text x="755" y="208" fill="#a5a3b8" font-size="11">membership links</text>
+            </g>
+            <path d="M450 88 V118 H145 V145 M450 118 V145 M450 118 H755 V145" fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#model-arrow)"/>
+            <rect x="342" y="244" width="216" height="30" rx="8" fill="#292744" stroke="#625ba5"/>
+            <text x="450" y="264" fill="#d2ceff" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Matter participation: matter ID + role</text>
+            <path d="M450 88 V235" fill="none" stroke="#918bff" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#model-arrow)"/>
+            <text x="574" y="116" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10">any Party</text>
+            <text x="755" y="252" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">Membership: member ID · role · dates · status</text>
+          </svg>
+          <figcaption>Membership and matter roles belong to relationships, not to the underlying identity.</figcaption>
+        </figure>
+        <ul class="docs-list">
+          <li>Party type is fixed when a record is created.</li>
+          <li>Groups can contain individuals and companies, but not other groups.</li>
+          <li>Membership dates and Active/Ended status preserve a simple relationship history.</li>
+          <li>A group needs at least one active member to be referenced in a matter.</li>
+          <li>Matter roles describe that Party's role in that matter; they do not change its identity.</li>
+        </ul>
+      </section>
+
+      <section class="docs-section panel" id="using-the-app">
+        <div class="section-kicker">USING THE APP</div>
+        <h2>Find, view, and edit records</h2>
+        <ol class="docs-list">
+          <li>Use the catalogue search to find a Party by its ID or name, member details, or matter reference. Narrow results with the type and status filters.</li>
+          <li>Select a row to view its identity, group membership, and matter references in the detail panel.</li>
+          <li>Choose <strong>New Party</strong> to add a record or <strong>Edit record</strong> to change one. An existing Party's type cannot be changed.</li>
+          <li>For groups, add or end memberships and supply dates and optional group-specific roles. Ended memberships remain as history.</li>
+          <li>Changes are saved in this browser. Use <strong>Reset sample data</strong> on the app to restore the fictional starting records and discard local edits.</li>
+        </ol>
+        <p>The detail pane zoom controls adjust only that pane. The app also remembers the selected light/dark theme in this browser.</p>
+      </section>
+
+      <section class="docs-section panel" id="company-search">
+        <div class="section-kicker">COMPANY LOOKUP</div>
+        <h2>Search the Companies House register</h2>
+        <p>When creating or editing a Company, the lookup can search by name. The exact query <code>Zoomalong Limited</code> uses built-in mock response data and needs no network or API key. Other queries use the live public search service.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 170" role="img" aria-labelledby="lookup-title lookup-desc">
+            <title id="lookup-title">Company search request flow</title>
+            <desc id="lookup-desc">The user enters a query and API key. The browser either returns the built-in mock result or sends the query and key through the configured proxy, which forwards an authenticated request to Companies House.</desc>
+            <defs><marker id="lookup-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker></defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="20" y="48" width="165" height="76" rx="12"/>
+              <rect x="265" y="10" width="205" height="62" rx="12"/>
+              <rect x="265" y="98" width="205" height="62" rx="12"/>
+              <rect x="555" y="98" width="170" height="62" rx="12"/>
+              <rect x="770" y="98" width="115" height="62" rx="12"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="102" y="79" font-size="15" font-weight="700">User enters query</text><text x="102" y="101" fill="#a5a3b8" font-size="11">and API key</text>
+              <text x="367" y="36" font-size="14" font-weight="700">Built-in mock</text><text x="367" y="55" fill="#a5a3b8" font-size="11">Zoomalong Limited</text>
+              <text x="367" y="124" font-size="14" font-weight="700">FastAPI proxy</text><text x="367" y="144" fill="#a5a3b8" font-size="11">configured service</text>
+              <text x="640" y="124" font-size="14" font-weight="700">Companies House</text><text x="640" y="144" fill="#a5a3b8" font-size="11">live search API</text>
+              <text x="827" y="124" font-size="13" font-weight="700">Select result</text><text x="827" y="144" fill="#a5a3b8" font-size="10">populate fields</text>
+            </g>
+            <g fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#lookup-arrow)">
+              <path d="M185 70 L255 44"/><path d="M185 102 L255 128"/><path d="M470 129 H545"/><path d="M725 129 H760"/>
+            </g>
+            <text x="220" y="43" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">mock query</text>
+            <text x="220" y="137" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">live query</text>
+          </svg>
+          <figcaption>Live lookups require a user-supplied Companies House API key. Direct browser lookup is also supported when no proxy URL is configured.</figcaption>
+        </figure>
+        <p>In the configured proxy flow, the browser sends the key in the <code>X-Companies-House-Api-Key</code> request header; the proxy forwards it to Companies House using Basic authentication. Selecting a result can populate the company name, registration number, legal form, jurisdiction, and mapped status.</p>
+        <p>The key is not saved by the app and is cleared when the form closes. It is still visible to the user and sent from the browser, so it cannot be treated as a protected secret in this static app. Search responses are for demonstration and are not legal verification.</p>
+      </section>
+
+      <section class="docs-section panel" id="implementation">
+        <div class="section-kicker">IMPLEMENTATION</div>
+        <h2>Files, service endpoints, and local checks</h2>
+        <ul class="docs-list">
+          <li><code>src/index.html</code> and <code>src/documentation.html</code> are the app and this guide; both are published as static pages.</li>
+          <li><code>src/app.js</code> handles display, forms, and browser storage; <code>src/party.js</code> contains sample data, domain validation, and search helpers.</li>
+          <li><code>api/main.py</code> implements the optional FastAPI proxy. The service provides <code>/health</code>, <code>/heartbeat</code>, and <code>/api/companies/search</code>; interactive API documentation is available at <code>/docs</code>.</li>
+          <li>The proxy accepts a company-name query and the caller's API key, then requests up to 10 results from Companies House. It does not store the key.</li>
+        </ul>
+        <p>For local development, install Podman Desktop and Node.js, then run <code>.\scripts\run-local.ps1</code> from PowerShell in the repository. This builds and starts the API container and serves a temporary client copy configured for the local API.</p>
+        <p>Run the focused client tests with <code>node --test tests/party.test.cjs</code>. API tests are run from <code>api/</code> with <code>python -m unittest -v</code>.</p>
+      </section>
+
+      <section class="docs-section panel" id="data-and-privacy">
+        <div class="section-kicker">DATA AND LIMITATIONS</div>
+        <h2>What this POC does not provide</h2>
+        <p>Party records are stored in the browser's <code>localStorage</code> under <code>poc-party.records.v1</code>. They are not encrypted, backed up, or shared with other browsers. A person using this browser can inspect and edit that storage.</p>
+        <ul class="docs-list">
+          <li>No sign-in, authentication, or access control</li>
+          <li>No production database, server-side record validation, or audit trail</li>
+          <li>No retention enforcement, identity matching, merge workflow, screening, or compliance process</li>
+          <li>Timestamps are illustrative client-side metadata, not attributable audit events</li>
+          <li>Companies House results are not independently verified by the app</li>
+        </ul>
+        <p>Use fictional demonstration data only. Do not use shared or public computers to enter API keys.</p>
+      </section>
+
+      <footer class="page-footer">
+        <span>PARTY EXPLORER <span class="footer-dot">/</span> DOCUMENTATION</span>
+        <span><a href="./index.html">Return to the Party catalogue</a></span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
