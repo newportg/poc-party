@@ -97,3 +97,4 @@ without starting the local services. This publishes both the
 
 Focused frontend tests: `node --test tests/party.test.cjs`. API tests:
 `cd api && python -m unittest -v`.
+Reusable Web Components are available in [`src/components/party-components.js`](src/components/party-components.js). See [`src/components/README.md`](src/components/README.md) for the catalogue/editor contract and usage example.
