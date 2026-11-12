@@ -80,11 +80,18 @@ If the default client port `5173` is already in use, the script automatically
 selects the next available port.
 The interactive company search still requires your Companies House API key.
 
+The local runner rebuilds the published recreation documentation before serving
+the temporary client. Run `.\scripts\publish-docs.ps1` directly to refresh it
+without starting the local services. This publishes both the
+[recreation specification](docs/recreation-spec.md) and
+[Companies House API contract](docs/api-contract.md).
+
 ## Project links
 
 - Knowledge-vault project: [Party](file:///C:/Source/Obsidian/Projects/POC-Documentation/POC-Documentation-Vault/projects/Party/README.md)
 - Requirements and domain discovery: vault `projects/Party/` (`party-prd.md`, `individual-model.md`, `company-model.md`)
 - Implementation design and limitations: [`docs/design.md`](docs/design.md)
+- Source-independent recreation guide: [`src/recreation-spec.md`](src/recreation-spec.md)
 
 ## Validation
 

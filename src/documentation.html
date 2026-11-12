@@ -32,16 +32,20 @@
         <span><strong>Demonstration only.</strong> Data is fictional or entered in your browser. Do not enter real personal or confidential information. A Companies House match is not legal verification.</span>
       </aside>
 
-      <nav class="docs-toc panel" aria-label="Documentation contents">
-        <strong>On this page</strong>
-        <a href="#overview">Overview</a>
-        <a href="#party-model">Party model</a>
-        <a href="#using-the-app">Using the app</a>
-        <a href="#company-search">Company search</a>
-        <a href="#implementation">Implementation</a>
-        <a href="#data-and-privacy">Data and limitations</a>
-      </nav>
+      <div class="docs-layout">
+        <nav class="docs-toc panel" aria-label="Documentation contents">
+          <strong>On this page</strong>
+          <a href="#overview">Overview</a>
+          <a href="#party-model">Party model</a>
+          <a href="#using-the-app">Using the app</a>
+          <a href="#company-search">Company search</a>
+          <a href="#implementation">Implementation</a>
+          <a href="#data-and-privacy">Data and limitations</a>
+          <a href="#api-contract">API contract</a>
+          <a href="#recreation-spec">Recreation spec</a>
+        </nav>
 
+        <div class="docs-content">
       <section class="docs-section panel" id="overview">
         <div class="section-kicker">OVERVIEW</div>
         <h2>One reusable record for each Party</h2>
@@ -197,6 +201,160 @@
         </ul>
         <p>Use fictional demonstration data only. Do not use shared or public computers to enter API keys.</p>
       </section>
+      <section class="docs-section panel" id="api-contract">
+        <div class="section-kicker">API CONTRACT</div>
+        <h2>Companies House proxy API</h2>
+        <p>The optional FastAPI service proxies company searches to Companies
+          House. The default local base URL is
+          <code>http://127.0.0.1:8000</code>. The downloadable
+          <a href="./api-contract.md">api-contract.md</a> contains this contract
+          in Markdown.</p>
+
+        <h3>Service endpoints</h3>
+        <ul class="docs-list">
+          <li><code>GET /</code> returns the service name and <code>/docs</code>
+            link.</li>
+          <li><code>GET /health</code> returns
+            <code>{"status":"ok"}</code>.</li>
+          <li><code>GET /heartbeat</code> returns
+            <code>{"status":"awake"}</code> and can wake a sleeping hosted
+            service.</li>
+          <li><code>GET /docs</code> provides interactive FastAPI
+            documentation; <code>GET /openapi.json</code> provides the schema.</li>
+        </ul>
+
+        <h3><code>GET /api/companies/search</code></h3>
+        <p>Required request headers:</p>
+        <pre><code>Accept: application/json
+X-Companies-House-Api-Key: &lt;caller Companies House API key&gt;</code></pre>
+        <p>The required <code>q</code> query parameter is a company name with
+          1-160 characters after trimming.</p>
+        <pre><code>GET /api/companies/search?q=ACME%20LTD
+X-Companies-House-Api-Key: caller-key</code></pre>
+        <p>The proxy forwards the request to Companies House with
+          <code>items_per_page=10</code> and Basic authentication using the
+          caller's key as the username and an empty password. It does not
+          persist or expose the key.</p>
+        <p>Successful responses contain the Companies House result items and
+          optional pagination fields:</p>
+        <pre><code>{
+  "items": [
+    {
+      "title": "ACME LTD",
+      "company_number": "01234567",
+      "company_status": "active"
+    }
+  ],
+  "total_results": 1,
+  "items_per_page": 10,
+  "start_index": 0
+}</code></pre>
+
+        <h3>Errors and direct lookup</h3>
+        <p>Invalid or missing query and header values return
+          <code>422</code>. Other proxy errors are:</p>
+        <ul class="docs-list">
+          <li><code>401</code> — Companies House rejected the API key.</li>
+          <li><code>502</code> — upstream network failure, invalid JSON, or
+            unexpected response.</li>
+          <li><code>504</code> — upstream request timed out.</li>
+        </ul>
+        <p>Error bodies use
+          <code>{"detail":"A human-readable message"}</code>; messages must not
+          echo the API key. When no proxy URL is configured, the browser can
+          call Companies House directly. The case-insensitive
+          <code>zoomalong limited</code> query uses a local mock without a
+          network request or API key. Other direct requests require an API key
+          and distinguish network failures, rejected credentials, and rate
+          limits.</p>
+      </section>
+      <section class="docs-section panel" id="recreation-spec">
+        <div class="section-kicker">RECREATION SPEC</div>
+        <h2>Recreating the application</h2>
+        <p>The complete source-independent recreation guide is also available as
+          <a href="./recreation-spec.md">recreation-spec.md</a>. The full guide is
+          included below so this documentation page is sufficient to understand
+          how to rebuild the static Party Explorer without relying on the original
+          source.</p>
+
+        <h3>Runtime files</h3>
+        <pre><code>src/index.html             Application shell and page layout
+src/app.js                 Rendering, editing, persistence, and UI state
+src/party.js               Party fixtures, validation, search, and API helpers
+src/config.js              Optional Companies House proxy URL
+src/documentation.html     In-app documentation
+src/documentation.css      Documentation page styles
+api/main.py                Optional FastAPI proxy
+scripts/run-local.ps1      Local API/client startup
+tests/party.test.cjs       Focused model and API behavior tests</code></pre>
+        <p>No frontend build step or database is required. The static page works
+          directly from a local file.</p>
+
+        <h3>Data and storage</h3>
+        <p>Store the editable catalogue under
+          <code>poc-party.records.v1</code> in browser
+          <code>localStorage</code>. Store the theme under
+          <code>poc-party.theme.v1</code>. The reset action restores the
+          fictional sample records.</p>
+        <p>Every Party has a stable ID, type, status, display name, timestamps,
+          memberships, and matter participations. Types are Individual, Company,
+          and Group. Individuals have person fields; companies have legal and
+          registration fields; groups have effective-dated membership links.</p>
+        <p>Groups may contain only individuals or companies, not groups.
+          Memberships retain Active and Ended history. Matter participation is
+          contextual and stores matter ID, matter name, and role on the Party
+          record.</p>
+
+        <h3>UI behavior</h3>
+        <ul class="docs-list">
+          <li>Searchable Party catalogue.</li>
+          <li>Type and status filters.</li>
+          <li>Selected Party detail panel.</li>
+          <li>Create/edit Party dialog.</li>
+          <li>Membership and matter-reference sections.</li>
+          <li>Company lookup panel.</li>
+          <li>Detail-pane zoom from 80% to 140%.</li>
+          <li>Light/dark theme toggle.</li>
+          <li>Reset sample-data action.</li>
+        </ul>
+        <p>Search covers Party ID, display/name fields, member ID/name/role, and
+          matter references. Selecting a catalogue entry updates the detail
+          panel. Company search results can populate company name, registration,
+          legal form, jurisdiction, status, and dissolution data.</p>
+        <p>The built-in case-insensitive query
+          <code>zoomalong limited</code> returns the mock Companies House
+          response without a network request or API key.</p>
+
+        <h3>Company search and API</h3>
+        <p>When <code>window.PARTY_API_BASE_URL</code> is configured, request:</p>
+        <pre><code>GET /api/companies/search?q=&lt;company name&gt;
+X-Companies-House-Api-Key: &lt;caller key&gt;</code></pre>
+        <p>The proxy forwards the key to Companies House using Basic
+          authentication and does not persist it. It exposes
+          <code>/</code>, <code>/health</code>, <code>/heartbeat</code>,
+          <code>/api/companies/search</code>, <code>/docs</code>, and
+          <code>/openapi.json</code>.</p>
+        <p>The browser also supports direct Companies House lookup when no proxy
+          URL is configured. Invalid keys, rate limits, and network/access
+          failures must be reported distinctly.</p>
+
+        <h3>Validation and tests</h3>
+        <p>Validate required display name, type, status, unique IDs, individual
+          names, membership target types, membership date ordering, duplicate
+          active members, self-membership, matter reference IDs, roles, and
+          active-member requirements for participating groups.</p>
+        <pre><code>node --test tests/party.test.cjs
+cd api
+python -m unittest -v</code></pre>
+
+        <h3>Limitations</h3>
+        <p>There is no authentication, authorization, production database,
+          audit trail, retention enforcement, identity matching, screening,
+          compliance workflow, or secure client secret storage. All records are
+          fictional demo data. Do not enter real personal or confidential
+          information.</p>
+      </section>
+        </div>
 
       <footer class="page-footer">
         <span>PARTY EXPLORER <span class="footer-dot">/</span> DOCUMENTATION</span>
@@ -204,5 +362,27 @@
       </footer>
     </main>
   </div>
+  <script>
+    (() => {
+      const links = [...document.querySelectorAll('.docs-toc a')];
+      const sections = links.map(link => document.querySelector(link.hash)).filter(Boolean);
+      links.forEach(link => link.addEventListener('click', event => {
+        const section = document.querySelector(link.hash);
+        if (!section) return;
+        event.preventDefault();
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', link.hash);
+      }));
+      const setActive = section => links.forEach(link => link.classList.toggle('active', link.hash === `#${section.id}`));
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          const visible = entries.filter(entry => entry.isIntersecting)
+            .sort((left, right) => left.boundingClientRect.top - right.boundingClientRect.top);
+          if (visible[0]) setActive(visible[0].target);
+        }, { rootMargin: '-90px 0px -65% 0px' });
+        sections.forEach(section => observer.observe(section));
+      } else if (sections[0]) setActive(sections[0]);
+    })();
+  </script>
 </body>
 </html>

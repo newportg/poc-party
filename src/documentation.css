@@ -33,3 +33,20 @@
   .docs-toc { align-items: flex-start; flex-direction: column; gap: 8px; }
   .docs-diagram { padding: 8px; }
 }
+
+html { scroll-behavior: smooth; }
+body { overflow: hidden; }
+.topbar { position: sticky; top: 0; z-index: 20; }
+.docs-main { height: calc(100vh - 74px); display: flex; flex-direction: column; }
+.docs-layout { min-height: 0; height: 0; flex: 1 1 auto; overflow: hidden; display: grid; grid-template-columns: 175px minmax(0, 1fr); align-items: start; gap: 24px; }
+.docs-toc { position: sticky; top: 92px; margin: 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.docs-toc a { padding: 5px 7px; border-left: 2px solid transparent; border-radius: 4px; }
+.docs-toc a:hover, .docs-toc a.active { border-left-color: #a5b4fc; background: rgba(129, 140, 248, .1); text-decoration: none; }
+.docs-content { min-width: 0; min-height: 0; height: 100%; overflow-y: auto; padding-right: 8px; }
+.docs-section { scroll-margin-top: 18px; }
+@media (max-width: 650px) {
+  .docs-main { height: calc(100vh - 66px); }
+  .docs-layout { display: flex; flex-direction: column; }
+  .docs-toc { position: static; width: 100%; margin-bottom: 18px; display: flex; }
+  .docs-content { flex: 1; height: auto; width: 100%; }
+}

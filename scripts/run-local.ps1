@@ -43,6 +43,9 @@ try {
         throw "Node.js was not found. Install Node.js to serve the browser client locally."
     }
 
+    Write-Host "Rebuilding Party documentation..."
+    & (Join-Path $PSScriptRoot "publish-docs.ps1")
+
     if (Test-LocalPortInUse $ClientPort) {
         if ($clientPortWasSpecified) {
             throw "Client port $ClientPort is already in use. Stop the existing client or choose another port with -ClientPort."
