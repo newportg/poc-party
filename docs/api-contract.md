@@ -13,6 +13,43 @@ Response:
 {"service": "Companies House Proxy API", "docs": "/docs"}
 ```
 
+## Party CRUD
+
+Party records are stored in SQLite. Set `PARTY_DB_PATH` to choose the database
+file; the default is `api/party.db`.
+
+### `GET /api/parties`
+
+Returns all persisted Party records:
+
+```json
+{"items": [{"id": "PTY-1001", "type": "individual", "displayName": "Avery Morgan", "status": "Active"}]}
+```
+
+### `GET /api/parties/{party_id}`
+
+Returns one Party, or `404` when it does not exist.
+
+### `POST /api/parties`
+
+Creates a Party. The request must include `id`, `type`, `displayName`, and
+`status`; additional Party fields are preserved. Returns `201`, or `409` if the
+ID already exists.
+
+### `PUT /api/parties/{party_id}`
+
+Replaces the Party record at the path ID. Returns `404` when it does not exist.
+
+### `DELETE /api/parties/{party_id}`
+
+Deletes the Party record and returns:
+
+```json
+{"id": "PTY-1001", "deleted": true}
+```
+
+The endpoint returns `404` when the Party does not exist.
+
 ## `GET /health`
 
 Response:

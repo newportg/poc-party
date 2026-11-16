@@ -1,4 +1,6 @@
 import asyncio
+import os
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -107,6 +109,58 @@ class CompaniesHouseApiTests(unittest.TestCase):
         response = asyncio.run(make_request())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"items": [{"title": "ACME LTD"}]})
+
+
+class PartyCrudApiTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.database = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.database.close()
+        main.DATABASE_PATH = self.database.name
+        main.initialize_database()
+        self.addCleanup(lambda: os.unlink(self.database.name))
+
+    def party(self, party_id: str = "PTY-9001") -> dict[str, str]:
+        return {
+            "id": party_id,
+            "type": "individual",
+            "displayName": "Test Party",
+            "status": "Active",
+        }
+
+    def test_create_list_update_and_delete_party(self) -> None:
+        async def exercise() -> None:
+            transport = httpx.ASGITransport(app=main.app)
+            async with HttpxAsyncClient(transport=transport, base_url="http://testserver") as client:
+                created = await client.post("/api/parties", json=self.party())
+                self.assertEqual(created.status_code, 201)
+                self.assertEqual(created.json()["displayName"], "Test Party")
+
+                listed = await client.get("/api/parties")
+                self.assertEqual([item["id"] for item in listed.json()["items"]], ["PTY-9001"])
+
+                updated = await client.put(
+                    "/api/parties/PTY-9001",
+                    json={**self.party(), "displayName": "Updated Party"},
+                )
+                self.assertEqual(updated.status_code, 200)
+                self.assertEqual(updated.json()["displayName"], "Updated Party")
+
+                deleted = await client.delete("/api/parties/PTY-9001")
+                self.assertEqual(deleted.status_code, 200)
+                self.assertEqual(deleted.json(), {"id": "PTY-9001", "deleted": True})
+                self.assertEqual((await client.get("/api/parties")).json()["items"], [])
+
+        asyncio.run(exercise())
+
+    def test_duplicate_create_and_missing_delete_are_reported(self) -> None:
+        async def exercise() -> None:
+            transport = httpx.ASGITransport(app=main.app)
+            async with HttpxAsyncClient(transport=transport, base_url="http://testserver") as client:
+                self.assertEqual((await client.post("/api/parties", json=self.party())).status_code, 201)
+                self.assertEqual((await client.post("/api/parties", json=self.party())).status_code, 409)
+                self.assertEqual((await client.delete("/api/parties/PTY-MISSING")).status_code, 404)
+
+        asyncio.run(exercise())
 
 
 if __name__ == "__main__":

@@ -1,10 +1,9 @@
 # Party Explorer — static proof of concept
 
 A browser-native demonstration of reusable Party records: individuals, companies,
-groups, group membership, and matter participation. The browser app is a standalone
-prototype; company search makes an HTTPS request only when explicitly started by the
-user. An optional Python service proxies Companies House requests and can be hosted on
-Render.
+groups, group membership, and matter participation. The Party API persists Party
+records in SQLite and provides CRUD endpoints; company search makes an HTTPS request
+only when explicitly started by the user. The service can be hosted on Render.
 
 ## Run
 
@@ -20,9 +19,10 @@ repository settings, set **Pages → Build and deployment → Source** to **GitH
 The deployment URL is available in the workflow run summary and the `github-pages`
 environment.
 
-Edits are stored in this browser's `localStorage`. Use **Reset sample data** to remove
-local changes and restore the included fictional records. Storage is not shared,
-secure, backed up, or suitable for production data.
+The API stores Party edits in SQLite. The standalone static client still has a local
+demo fallback when no API URL is configured; the portal always routes Party CRUD
+through the API. Storage is not shared, secure, backed up, or suitable for production
+data.
 
 ## What is included
 
